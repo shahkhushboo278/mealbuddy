@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>MealBuddy 🥗</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Syne:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green: #25D366;
+    --green-dark: #128C7E;
+    --green-light: #dcf8c6;
+    --bubble-in: #ffffff;
+    --bubble-out: #dcf8c6;
+    --chat-bg: #ece5dd;
+    --header-bg: #075E54;
+    --text-main: #111;
+    --text-muted: #667781;
+    --card-bg: #ffffff;
+    --page-bg: #f0f2f5;
+    --border: rgba(0,0,0,0.1);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bubble-in: #202c33;
+      --bubble-out: #005c4b;
+      --chat-bg: #0b141a;
+      --text-main: #e9edef;
+      --text-muted: #8696a0;
+      --card-bg: #1f2c34;
+      --page-bg: #111b21;
+      --border: rgba(255,255,255,0.08);
+    }
+  }
+
+  .recipe-add-btn {
+    background: var(--green);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .recipe-add-btn:hover { background: #1eb957; }
+
+  .recipe-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 12px;
+    border: 0.5px solid var(--border);
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    animation: slideIn 0.3s ease;
+  }
+
+  .recipe-emoji-box {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: rgba(37,211,102,0.1);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+
+  .recipe-info { flex: 1; min-width: 0; }
+  .recipe-name { font-size: 14px; font-weight: 500; color: var(--text-main); }
+  .recipe-meta { font-size: 11.5px; color: var(--text-muted); margin-top: 3px; }
+  .recipe-notes { font-size: 11.5px; color: var(--text-muted); margin-top:4px; font-style:italic; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .recipe-actions { display:flex; flex-direction:column; gap:5px; flex-shrink:0; }
+
+  .recipe-log-btn {
+    background: var(--green);
+    color: white;
+    border: none;
+    border-radius: 7px;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .recipe-log-btn:hover { background: #1eb957; }
+
+  .recipe-del-btn {
+    background: none;
+    color: var(--text-muted);
+    border: 0.5px solid var(--border);
+    border-radius: 7px;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+  }
+  .recipe-del-btn:hover { border-color: #e24b4a; color: #e24b4a; }
+
+  .recipe-input {
+    width: 100%;
+    background: var(--chat-bg);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 11px;
+    font-size: 13.5px;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text-main);
+    outline: none;
+  }
+  .recipe-input:focus { border-color: var(--green); }
+
+  .field-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+  }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .radio-opt {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-main);
+    cursor: pointer;
+    background: var(--chat-bg);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    flex: 1;
+  }
+
+  .recipe-save-btn {
+    flex: 2;
+    padding: 11px;
+    border-radius: 10px;
+    border: none;
+    background: var(--green);
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+  }
+  .recipe-save-btn:hover { background: #1eb957; }
+
+  html, body {
+    height: 100%;
+    font-family: 'DM Sans', sans-serif;
+    background: var(--page-bg);
+    overflow: hidden;
+  }
+
+  /* ---- LAYOUT ---- */
+  .app {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    height: 100vh;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  @media (max-width: 680px) {
+    .app { grid-template-columns: 1fr; }
+    .dashboard { display: none; }
+    .dashboard.show { display: flex; }
+    .chat-panel.hide { display: none; }
+  }
+
+  /* ---- CHAT PANEL ---- */
+  .chat-panel {
+    display: flex;
+    flex-direction: column;
+    background: var(--chat-bg);
+    border-right: 0.5px solid var(--border);
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  .chat-header {
+    background: var(--header-bg);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #25D366, #128C7E);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+
+  .chat-header-info { flex: 1; }
+  .chat-header-name { color: #fff; font-size: 16px; font-weight: 600; }
+  .chat-header-sub { color: rgba(255,255,255,0.65); font-size: 12px; }
+
+  .dash-toggle-btn {
+    display: none;
+    background: rgba(255,255,255,0.15);
+    border: none;
+    color: white;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+  }
+
+  @media (max-width: 680px) { .dash-toggle-btn { display: block; } }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .chat-messages::-webkit-scrollbar { width: 4px; }
+  .chat-messages::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 4px; }
+
+  .msg {
+    max-width: 80%;
+    padding: 8px 11px 4px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.45;
+    position: relative;
+    word-break: break-word;
+  }
+
+  .msg.out {
+    background: var(--bubble-out);
+    align-self: flex-end;
+    border-bottom-right-radius: 2px;
+    color: var(--text-main);
+  }
+
+  .msg.in {
+    background: var(--bubble-in);
+    align-self: flex-start;
+    border-bottom-left-radius: 2px;
+    color: var(--text-main);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  }
+
+  .msg-time {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-align: right;
+    margin-top: 3px;
+  }
+
+  .msg.in .msg-time { text-align: left; }
+
+  .calories-tag {
+    display: inline-block;
+    background: rgba(37,211,102,0.15);
+    color: var(--green-dark);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: 4px;
+  }
+
+  .typing-indicator {
+    display: flex; gap: 4px; align-items: center;
+    background: var(--bubble-in);
+    border-radius: 8px; border-bottom-left-radius: 2px;
+    padding: 11px 14px;
+    align-self: flex-start;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  }
+
+  .typing-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--text-muted);
+    animation: bounce 1.2s infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-5px); }
+  }
+
+  .chat-input-area {
+    padding: 10px;
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    background: var(--chat-bg);
+    flex-shrink: 0;
+  }
+
+  .chat-input {
+    flex: 1;
+    background: var(--bubble-in);
+    border: none;
+    border-radius: 24px;
+    padding: 11px 18px;
+    font-size: 15px;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text-main);
+    outline: none;
+    resize: none;
+    max-height: 100px;
+    min-height: 46px;
+  }
+
+  .chat-input::placeholder { color: var(--text-muted); }
+
+  .send-btn {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    background: var(--green);
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: transform 0.1s;
+  }
+
+  .send-btn:hover { transform: scale(1.05); background: #22c55e; }
+  .send-btn:active { transform: scale(0.95); }
+  .send-btn svg { fill: white; width: 22px; height: 22px; }
+
+  /* ---- DASHBOARD ---- */
+  .dashboard {
+    display: flex;
+    flex-direction: column;
+    background: var(--page-bg);
+    overflow: hidden;
+  }
+
+  @media (max-width: 680px) {
+    .dashboard {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 100;
+    }
+  }
+
+  .dash-header {
+    background: var(--header-bg);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .dash-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: white;
+  }
+
+  .dash-back-btn {
+    display: none;
+    background: rgba(255,255,255,0.15);
+    border: none;
+    color: white;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+  }
+
+  @media (max-width: 680px) { .dash-back-btn { display: block; } }
+
+  .dash-date { font-size: 11px; color: rgba(255,255,255,0.65); }
+
+  .dash-tabs {
+    display: flex;
+    border-bottom: 0.5px solid var(--border);
+    background: var(--card-bg);
+    flex-shrink: 0;
+  }
+
+  .dash-tab {
+    flex: 1; padding: 11px 4px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    user-select: none;
+  }
+
+  .dash-tab.active { color: var(--green-dark); border-bottom-color: var(--green); }
+
+  .dash-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .dash-body::-webkit-scrollbar { width: 4px; }
+  .dash-body::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
+
+  .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .stat-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 13px;
+    border: 0.5px solid var(--border);
+  }
+
+  .stat-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+
+  .stat-value {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text-main);
+    font-family: 'Syne', sans-serif;
+  }
+
+  .stat-unit { font-size: 12px; font-weight: 400; color: var(--text-muted); margin-left: 3px; }
+
+  .stat-bar {
+    height: 5px;
+    border-radius: 3px;
+    background: var(--border);
+    margin-top: 9px;
+    overflow: hidden;
+  }
+
+  .stat-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+  }
+
+  .meal-log { display: flex; flex-direction: column; gap: 7px; }
+
+  .meal-item {
+    background: var(--card-bg);
+    border-radius: 10px;
+    padding: 10px 13px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 0.5px solid var(--border);
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .meal-icon {
+    width: 36px; height: 36px;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+
+  .meal-icon.healthy { background: rgba(37,211,102,0.12); }
+  .meal-icon.unhealthy { background: rgba(226,75,74,0.1); }
+  .meal-icon.moderate { background: rgba(239,159,39,0.12); }
+
+  .meal-info { flex: 1; min-width: 0; }
+
+  .meal-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .meal-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .meal-cal { font-size: 13px; font-weight: 600; white-space: nowrap; }
+
+  .healthy-tag { color: #25D366; }
+  .unhealthy-tag { color: #e24b4a; }
+  .moderate-tag { color: #ef9f27; }
+
+  .health-score-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 14px;
+    border: 0.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .score-ring-wrap { position: relative; flex-shrink: 0; }
+  .score-ring-wrap svg { transform: rotate(-90deg); }
+
+  .score-number {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-main);
+  }
+
+  .score-info { flex: 1; }
+  .score-title { font-size: 13px; font-weight: 500; color: var(--text-main); margin-bottom: 4px; }
+  .score-desc { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+
+  .suggestion-card {
+    background: rgba(37,211,102,0.07);
+    border-radius: 10px;
+    padding: 11px 13px;
+    border: 0.5px solid rgba(37,211,102,0.25);
+    display: flex;
+    gap: 9px;
+    align-items: flex-start;
+  }
+
+  .suggestion-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+
+  .suggestion-text { font-size: 13px; color: var(--text-main); line-height: 1.45; }
+
+  .tab-content { display: none; flex-direction: column; gap: 12px; }
+  .tab-content.active { display: flex; }
+
+  .macro-row {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 14px;
+    border: 0.5px solid var(--border);
+  }
+
+  .macro-item { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .macro-item:last-child { margin-bottom: 0; }
+  .macro-name { font-size: 12px; color: var(--text-muted); width: 64px; flex-shrink: 0; }
+
+  .macro-bar-wrap {
+    flex: 1; height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .macro-bar-fill { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
+  .macro-val { font-size: 12px; font-weight: 500; color: var(--text-main); width: 44px; text-align: right; flex-shrink: 0; }
+
+  .empty-state {
+    text-align: center;
+    padding: 36px 16px;
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .empty-state .big-emoji { font-size: 40px; margin-bottom: 10px; }
+
+  .reset-btn {
+    background: none;
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+    align-self: flex-end;
+  }
+
+  .reset-btn:hover { border-color: #e24b4a; color: #e24b4a; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- CHAT PANEL -->
+  <div class="chat-panel" id="chat-panel">
+    <div class="chat-header">
+      <div class="avatar">🥗</div>
+      <div class="chat-header-info">
+        <div class="chat-header-name">MealBuddy</div>
+        <div class="chat-header-sub">Tracking your nutrition today</div>
+      </div>
+      <button class="dash-toggle-btn" onclick="showDash()">📊 Report</button>
+    </div>
+
+    <div class="chat-messages" id="chat-messages">
+      <div class="msg in">
+        Hey! I'm MealBuddy 🌱 I'm your veg nutrition buddy! Tell me what you're eating and I'll track calories, macros, health score &amp; tips. I know 200+ vegetarian foods!
+        <div class="msg-time" id="welcome-time"></div>
+      </div>
+      <div class="msg in">
+        Try: <em>"dal roti"</em>, <em>"idli sambhar"</em>, <em>"hummus pita"</em>, <em>"protein shake"</em>, or <em>"veg burger"</em> 🌱
+        <div class="msg-time" id="welcome-time2"></div>
+      </div>
+    </div>
+
+    <div class="chat-input-area">
+      <textarea class="chat-input" id="chat-input" placeholder="What did you eat?" rows="1"></textarea>
+      <button class="send-btn" onclick="sendMessage()">
+        <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="dashboard" id="dashboard">
+    <div class="dash-header">
+      <div>
+        <div class="dash-title">Today's Report</div>
+        <div class="dash-date" id="dash-date"></div>
+      </div>
+      <button class="dash-back-btn" onclick="showChat()">← Chat</button>
+    </div>
+
+    <div class="dash-tabs">
+      <div class="dash-tab active" onclick="switchTab('overview', this)">Overview</div>
+      <div class="dash-tab" onclick="switchTab('meals', this)">Meals</div>
+      <div class="dash-tab" onclick="switchTab('macros', this)">Macros</div>
+      <div class="dash-tab" onclick="switchTab('tips', this)">Tips</div>
+      <div class="dash-tab" onclick="switchTab('recipes', this)">Recipes</div>
+    </div>
+
+    <div class="dash-body">
+
+      <!-- OVERVIEW -->
+      <div class="tab-content active" id="tab-overview">
+        <div class="stat-row">
+          <div class="stat-card">
+            <div class="stat-label">Total Calories</div>
+            <div class="stat-value" id="stat-cal">0<span class="stat-unit">kcal</span></div>
+            <div class="stat-bar"><div class="stat-bar-fill" id="bar-cal" style="width:0%;background:#25D366;"></div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Health Score</div>
+            <div class="stat-value" id="stat-score">—</div>
+            <div class="stat-bar"><div class="stat-bar-fill" id="bar-score" style="width:0%;background:#25D366;"></div></div>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-card">
+            <div class="stat-label">Healthy Items</div>
+            <div class="stat-value" id="stat-healthy" style="color:#25D366;">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Unhealthy Items</div>
+            <div class="stat-value" id="stat-unhealthy" style="color:#e24b4a;">0</div>
+          </div>
+        </div>
+        <div class="health-score-card" id="score-card" style="display:none;">
+          <div class="score-ring-wrap">
+            <svg width="66" height="66" viewBox="0 0 66 66">
+              <circle cx="33" cy="33" r="27" fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="7"/>
+              <circle id="ring-circle" cx="33" cy="33" r="27" fill="none" stroke="#25D366" stroke-width="7" stroke-linecap="round" stroke-dasharray="170" stroke-dashoffset="170" style="transition: stroke-dashoffset 0.8s ease;"/>
+            </svg>
+            <div class="score-number" id="ring-score">0</div>
+          </div>
+          <div class="score-info">
+            <div class="score-title" id="score-label">—</div>
+            <div class="score-desc" id="score-desc">—</div>
+          </div>
+        </div>
+        <div class="empty-state" id="overview-empty">
+          <div class="big-emoji">🍽️</div>
+          Start chatting to see your nutrition overview!
+        </div>
+        <button class="reset-btn" id="reset-btn" style="display:none;" onclick="resetAll()">🗑 Reset today's log</button>
+      </div>
+
+      <!-- MEALS -->
+      <div class="tab-content" id="tab-meals">
+        <div class="section-title">Food Log</div>
+        <div class="meal-log" id="meal-log">
+          <div class="empty-state">
+            <div class="big-emoji">🥣</div>
+            No meals logged yet!
+          </div>
+        </div>
+      </div>
+
+      <!-- MACROS -->
+      <div class="tab-content" id="tab-macros">
+        <div class="macro-row">
+          <div class="section-title" style="margin-bottom:14px;">Macronutrients</div>
+          <div class="macro-item">
+            <div class="macro-name">Protein</div>
+            <div class="macro-bar-wrap"><div class="macro-bar-fill" id="bar-protein" style="width:0%;background:#378add;"></div></div>
+            <div class="macro-val" id="val-protein">0g</div>
+          </div>
+          <div class="macro-item">
+            <div class="macro-name">Carbs</div>
+            <div class="macro-bar-wrap"><div class="macro-bar-fill" id="bar-carbs" style="width:0%;background:#ef9f27;"></div></div>
+            <div class="macro-val" id="val-carbs">0g</div>
+          </div>
+          <div class="macro-item">
+            <div class="macro-name">Fats</div>
+            <div class="macro-bar-wrap"><div class="macro-bar-fill" id="bar-fats" style="width:0%;background:#e24b4a;"></div></div>
+            <div class="macro-val" id="val-fats">0g</div>
+          </div>
+          <div class="macro-item">
+            <div class="macro-name">Fiber</div>
+            <div class="macro-bar-wrap"><div class="macro-bar-fill" id="bar-fiber" style="width:0%;background:#25D366;"></div></div>
+            <div class="macro-val" id="val-fiber">0g</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Calorie Target (2000 kcal/day)</div>
+          <div style="display:flex;align-items:baseline;gap:4px;margin:7px 0;">
+            <span class="stat-value" id="macro-cal" style="font-size:20px;">0</span>
+            <span style="color:var(--text-muted);font-size:13px;">/ 2000 kcal</span>
+          </div>
+          <div class="stat-bar" style="height:8px;"><div class="stat-bar-fill" id="bar-cal2" style="width:0%;background:#25D366;border-radius:4px;"></div></div>
+        </div>
+      </div>
+
+      <!-- TIPS -->
+      <div class="tab-content" id="tab-tips">
+        <div class="section-title">Recommendations</div>
+        <div id="tips-list">
+          <div class="empty-state">
+            <div class="big-emoji">💡</div>
+            Log some meals and I'll give you personalized tips!
+          </div>
+        </div>
+      </div>
+
+      <!-- RECIPES -->
+      <div class="tab-content" id="tab-recipes">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div class="section-title">My Recipes</div>
+          <button class="recipe-add-btn" onclick="openRecipeModal()">+ Add Recipe</button>
+        </div>
+        <div id="recipe-list">
+          <div class="empty-state">
+            <div class="big-emoji">📖</div>
+            No recipes yet! Add your own recipes and log them from chat.<br><br>
+            <small style="color:var(--text-muted);">Once added, just type the recipe name in chat to log it.</small>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- RECIPE MODAL -->
+<div id="recipe-modal-bg" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);z-index:200;align-items:center;justify-content:center;">
+  <div id="recipe-modal" style="background:var(--card-bg);border-radius:16px;padding:20px;width:90%;max-width:420px;max-height:85vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.2);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div style="font-size:15px;font-weight:600;color:var(--text-main);" id="modal-title">Add New Recipe</div>
+      <button onclick="closeRecipeModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);line-height:1;">×</button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div>
+        <label class="field-label">Recipe Name *</label>
+        <input class="recipe-input" id="r-name" type="text" placeholder="e.g. Mum's Dal Tadka">
+      </div>
+      <div>
+        <label class="field-label">Emoji</label>
+        <input class="recipe-input" id="r-emoji" type="text" placeholder="🍲" maxlength="4" style="width:70px;">
+      </div>
+      <div class="field-row">
+        <div>
+          <label class="field-label">Calories (kcal) *</label>
+          <input class="recipe-input" id="r-cal" type="number" placeholder="350" min="0">
+        </div>
+        <div>
+          <label class="field-label">Servings</label>
+          <input class="recipe-input" id="r-servings" type="number" placeholder="1" min="1" value="1">
+        </div>
+      </div>
+      <div class="field-row">
+        <div>
+          <label class="field-label">Protein (g)</label>
+          <input class="recipe-input" id="r-protein" type="number" placeholder="12" min="0">
+        </div>
+        <div>
+          <label class="field-label">Carbs (g)</label>
+          <input class="recipe-input" id="r-carbs" type="number" placeholder="45" min="0">
+        </div>
+      </div>
+      <div class="field-row">
+        <div>
+          <label class="field-label">Fat (g)</label>
+          <input class="recipe-input" id="r-fat" type="number" placeholder="8" min="0">
+        </div>
+        <div>
+          <label class="field-label">Fiber (g)</label>
+          <input class="recipe-input" id="r-fiber" type="number" placeholder="5" min="0">
+        </div>
+      </div>
+      <div>
+        <label class="field-label">Category</label>
+        <select class="recipe-input" id="r-category">
+          <option value="indian">Indian</option>
+          <option value="middle eastern">Middle Eastern</option>
+          <option value="chinese">Chinese / Asian</option>
+          <option value="meal">General Meal</option>
+          <option value="snack">Snack</option>
+          <option value="breakfast">Breakfast</option>
+          <option value="drink">Drink</option>
+          <option value="sweets">Sweets / Dessert</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Health Rating</label>
+        <div style="display:flex;gap:8px;">
+          <label class="radio-opt" id="radio-healthy">
+            <input type="radio" name="health" value="true" checked> Healthy
+          </label>
+          <label class="radio-opt" id="radio-unhealthy">
+            <input type="radio" name="health" value="false"> Indulgent
+          </label>
+        </div>
+      </div>
+      <div>
+        <label class="field-label">Ingredients / Notes</label>
+        <textarea class="recipe-input" id="r-notes" placeholder="Optional — e.g. dal, tomato, spices, ghee..." rows="3" style="resize:vertical;"></textarea>
+      </div>
+      <div id="modal-error" style="display:none;color:#e24b4a;font-size:12px;padding:6px 10px;background:rgba(226,75,74,0.08);border-radius:6px;"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="recipe-save-btn" onclick="saveRecipe()" id="save-btn">Save Recipe</button>
+        <button onclick="closeRecipeModal()" style="flex:1;padding:11px;border-radius:10px;border:0.5px solid var(--border);background:none;font-size:14px;color:var(--text-muted);cursor:pointer;font-family:'DM Sans',sans-serif;">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   HOW TO ADD YOUR OWN FOODS — Easy Guide
+   ============================================================
+   Find this FOOD_DB section and add a new line like this:
+
+   "food name": { cal:200, protein:5, carbs:30, fat:4, fiber:3, healthy:true, category:"indian", emoji:"🍛" },
+
+   Fields explained:
+   - "food name"  → what you type in the chat (lowercase)
+   - cal          → calories per serving
+   - protein      → grams of protein
+   - carbs        → grams of carbohydrates
+   - fat          → grams of fat
+   - fiber        → grams of fiber
+   - healthy      → true (healthy) or false (unhealthy)
+   - category     → any label: "indian", "fruit", "snack", etc.
+   - emoji        → any emoji that fits the food
+
+   EXAMPLE — Adding Aloo Paratha:
+   "aloo paratha": { cal:300, protein:6, carbs:42, fat:12, fiber:3, healthy:false, category:"indian", emoji:"🫓" },
+
+   Save the file and reload in your browser. Done!
+   ============================================================ */
+
+const FOOD_DB = {
+
+  // ── EGGS & DAIRY (vegetarian) ──────────────────────────────
+  "egg": { cal:78, protein:6, carbs:1, fat:5, fiber:0, healthy:true, category:"protein", emoji:"🥚" },
+  "eggs": { cal:78, protein:6, carbs:1, fat:5, fiber:0, healthy:true, category:"protein", emoji:"🥚" },
+  "boiled egg": { cal:78, protein:6, carbs:1, fat:5, fiber:0, healthy:true, category:"protein", emoji:"🥚" },
+  "omelette": { cal:154, protein:11, carbs:1, fat:12, fiber:0, healthy:true, category:"protein", emoji:"🍳" },
+  "scrambled eggs": { cal:148, protein:10, carbs:1, fat:11, fiber:0, healthy:true, category:"protein", emoji:"🍳" },
+  "milk": { cal:103, protein:8, carbs:12, fat:2, fiber:0, healthy:true, category:"dairy", emoji:"🥛" },
+  "yogurt": { cal:100, protein:17, carbs:6, fat:1, fiber:0, healthy:true, category:"dairy", emoji:"🫙" },
+  "curd": { cal:98, protein:11, carbs:4, fat:4, fiber:0, healthy:true, category:"dairy", emoji:"🫙" },
+  "cheese": { cal:113, protein:7, carbs:0, fat:9, fiber:0, healthy:false, category:"dairy", emoji:"🧀" },
+  "butter": { cal:102, protein:0, carbs:0, fat:12, fiber:0, healthy:false, category:"dairy", emoji:"🧈" },
+  "ghee": { cal:112, protein:0, carbs:0, fat:13, fiber:0, healthy:false, category:"dairy", emoji:"🧈" },
+  "paneer": { cal:265, protein:18, carbs:4, fat:20, fiber:0, healthy:false, category:"dairy", emoji:"🧀" },
+  "lassi": { cal:150, protein:6, carbs:22, fat:4, fiber:0, healthy:true, category:"drink", emoji:"🥛" },
+  "chaas": { cal:40, protein:3, carbs:5, fat:1, fiber:0, healthy:true, category:"drink", emoji:"🥛" },
+  "kheer": { cal:178, protein:5, carbs:30, fat:5, fiber:0, healthy:false, category:"sweets", emoji:"🍮" },
+  "raita": { cal:60, protein:3, carbs:6, fat:2, fiber:1, healthy:true, category:"indian", emoji:"🫙" },
+
+  // ── INDIAN / SOUTH ASIAN ───────────────────────────────────
+  "dal": { cal:150, protein:9, carbs:25, fat:1, fiber:7, healthy:true, category:"indian", emoji:"🫘" },
+  "dal tadka": { cal:180, protein:10, carbs:26, fat:5, fiber:6, healthy:true, category:"indian", emoji:"🫘" },
+  "dal makhani": { cal:230, protein:11, carbs:28, fat:9, fiber:7, healthy:false, category:"indian", emoji:"🫘" },
+  "chana masala": { cal:210, protein:12, carbs:30, fat:5, fiber:9, healthy:true, category:"indian", emoji:"🫘" },
+  "rajma": { cal:220, protein:13, carbs:32, fat:4, fiber:10, healthy:true, category:"indian", emoji:"🫘" },
+  "palak paneer": { cal:280, protein:14, carbs:10, fat:21, fiber:4, healthy:false, category:"indian", emoji:"🥬" },
+  "aloo gobi": { cal:150, protein:4, carbs:22, fat:5, fiber:5, healthy:true, category:"indian", emoji:"🥔" },
+  "aloo matar": { cal:170, protein:5, carbs:26, fat:5, fiber:5, healthy:true, category:"indian", emoji:"🥔" },
+  "sabzi": { cal:120, protein:4, carbs:16, fat:4, fiber:5, healthy:true, category:"indian", emoji:"🥦" },
+  "roti": { cal:120, protein:4, carbs:22, fat:2, fiber:3, healthy:true, category:"indian", emoji:"🫓" },
+  "chapati": { cal:120, protein:4, carbs:22, fat:2, fiber:3, healthy:true, category:"indian", emoji:"🫓" },
+  "paratha": { cal:260, protein:6, carbs:36, fat:11, fiber:3, healthy:false, category:"indian", emoji:"🫓" },
+  "aloo paratha": { cal:300, protein:6, carbs:42, fat:12, fiber:3, healthy:false, category:"indian", emoji:"🫓" },
+  "naan": { cal:262, protein:9, carbs:45, fat:5, fiber:2, healthy:false, category:"indian", emoji:"🫓" },
+  "poori": { cal:200, protein:4, carbs:26, fat:9, fiber:2, healthy:false, category:"indian", emoji:"🫓" },
+  "idli": { cal:58, protein:2, carbs:12, fat:0, fiber:1, healthy:true, category:"indian", emoji:"🍚" },
+  "dosa": { cal:168, protein:4, carbs:30, fat:4, fiber:1, healthy:true, category:"indian", emoji:"🥞" },
+  "masala dosa": { cal:220, protein:5, carbs:35, fat:7, fiber:2, healthy:false, category:"indian", emoji:"🥞" },
+  "uttapam": { cal:175, protein:5, carbs:28, fat:5, fiber:2, healthy:true, category:"indian", emoji:"🥞" },
+  "upma": { cal:177, protein:4, carbs:30, fat:5, fiber:2, healthy:true, category:"indian", emoji:"🍚" },
+  "poha": { cal:180, protein:4, carbs:35, fat:3, fiber:2, healthy:true, category:"indian", emoji:"🍚" },
+  "pav bhaji": { cal:320, protein:8, carbs:50, fat:10, fiber:6, healthy:false, category:"indian", emoji:"🍞" },
+  "samosa": { cal:262, protein:4, carbs:32, fat:13, fiber:2, healthy:false, category:"indian", emoji:"🥟" },
+  "pakora": { cal:150, protein:4, carbs:18, fat:7, fiber:2, healthy:false, category:"indian", emoji:"🍤" },
+  "vada": { cal:190, protein:6, carbs:22, fat:9, fiber:3, healthy:false, category:"indian", emoji:"🍩" },
+  "medu vada": { cal:190, protein:6, carbs:22, fat:9, fiber:3, healthy:false, category:"indian", emoji:"🍩" },
+  "pulao": { cal:210, protein:5, carbs:40, fat:4, fiber:2, healthy:true, category:"indian", emoji:"🍚" },
+  "biryani": { cal:290, protein:8, carbs:48, fat:8, fiber:3, healthy:false, category:"indian", emoji:"🍚" },
+  "veg biryani": { cal:290, protein:8, carbs:48, fat:8, fiber:3, healthy:false, category:"indian", emoji:"🍚" },
+  "khichdi": { cal:200, protein:8, carbs:36, fat:3, fiber:4, healthy:true, category:"indian", emoji:"🍚" },
+  "sambhar": { cal:90, protein:5, carbs:14, fat:2, fiber:5, healthy:true, category:"indian", emoji:"🍲" },
+  "rasam": { cal:50, protein:2, carbs:8, fat:1, fiber:2, healthy:true, category:"indian", emoji:"🍲" },
+  "halwa": { cal:310, protein:4, carbs:48, fat:12, fiber:1, healthy:false, category:"sweets", emoji:"🍮" },
+  "gulab jamun": { cal:175, protein:3, carbs:31, fat:5, fiber:0, healthy:false, category:"sweets", emoji:"🟤" },
+  "jalebi": { cal:150, protein:2, carbs:34, fat:2, fiber:0, healthy:false, category:"sweets", emoji:"🍩" },
+  "ladoo": { cal:195, protein:4, carbs:27, fat:9, fiber:1, healthy:false, category:"sweets", emoji:"🟡" },
+  "barfi": { cal:180, protein:5, carbs:26, fat:7, fiber:0, healthy:false, category:"sweets", emoji:"🟩" },
+  "pani puri": { cal:150, protein:3, carbs:24, fat:5, fiber:2, healthy:false, category:"indian", emoji:"🫧" },
+  "bhel puri": { cal:180, protein:4, carbs:30, fat:5, fiber:3, healthy:false, category:"indian", emoji:"🫧" },
+  "chaat": { cal:200, protein:5, carbs:32, fat:6, fiber:3, healthy:false, category:"indian", emoji:"🫧" },
+  "dhokla": { cal:160, protein:6, carbs:25, fat:4, fiber:2, healthy:true, category:"indian", emoji:"🟨" },
+  "kachori": { cal:280, protein:5, carbs:34, fat:14, fiber:3, healthy:false, category:"indian", emoji:"🥟" },
+  "thepla": { cal:170, protein:5, carbs:24, fat:6, fiber:3, healthy:true, category:"indian", emoji:"🫓" },
+  "pongal": { cal:210, protein:6, carbs:38, fat:5, fiber:2, healthy:true, category:"indian", emoji:"🍚" },
+  "payasam": { cal:200, protein:5, carbs:35, fat:5, fiber:1, healthy:false, category:"sweets", emoji:"🍮" },
+
+  // ── MIDDLE EASTERN / ARABIC ───────────────────────────────
+  "hummus": { cal:166, protein:8, carbs:14, fat:10, fiber:6, healthy:true, category:"middle eastern", emoji:"🫘" },
+  "falafel": { cal:333, protein:13, carbs:32, fat:18, fiber:8, healthy:false, category:"middle eastern", emoji:"🧆" },
+  "pita": { cal:165, protein:6, carbs:33, fat:1, fiber:1, healthy:true, category:"middle eastern", emoji:"🫓" },
+  "pita bread": { cal:165, protein:6, carbs:33, fat:1, fiber:1, healthy:true, category:"middle eastern", emoji:"🫓" },
+  "tabbouleh": { cal:140, protein:4, carbs:20, fat:6, fiber:5, healthy:true, category:"middle eastern", emoji:"🥗" },
+  "fattoush": { cal:130, protein:3, carbs:18, fat:6, fiber:4, healthy:true, category:"middle eastern", emoji:"🥗" },
+  "baba ganoush": { cal:72, protein:2, carbs:8, fat:4, fiber:2, healthy:true, category:"middle eastern", emoji:"🍆" },
+  "muhammara": { cal:150, protein:3, carbs:12, fat:10, fiber:3, healthy:true, category:"middle eastern", emoji:"🌶" },
+  "mujaddara": { cal:190, protein:8, carbs:30, fat:4, fiber:8, healthy:true, category:"middle eastern", emoji:"🫘" },
+  "stuffed grape leaves": { cal:180, protein:4, carbs:26, fat:7, fiber:3, healthy:true, category:"middle eastern", emoji:"🍃" },
+  "manakish": { cal:280, protein:8, carbs:40, fat:10, fiber:2, healthy:false, category:"middle eastern", emoji:"🫓" },
+  "knafeh": { cal:380, protein:8, carbs:52, fat:17, fiber:1, healthy:false, category:"sweets", emoji:"🍮" },
+  "baklava": { cal:334, protein:5, carbs:40, fat:18, fiber:2, healthy:false, category:"sweets", emoji:"🥐" },
+  "dates": { cal:282, protein:2, carbs:75, fat:0, fiber:8, healthy:false, category:"fruit", emoji:"🟤" },
+  "laban": { cal:63, protein:5, carbs:7, fat:2, fiber:0, healthy:true, category:"drink", emoji:"🥛" },
+  "zaatar": { cal:20, protein:1, carbs:3, fat:1, fiber:1, healthy:true, category:"middle eastern", emoji:"🌿" },
+
+  // ── CHINESE / EAST ASIAN ──────────────────────────────────
+  "fried rice": { cal:238, protein:5, carbs:40, fat:7, fiber:1, healthy:false, category:"chinese", emoji:"🍚" },
+  "veg fried rice": { cal:238, protein:5, carbs:40, fat:7, fiber:2, healthy:false, category:"chinese", emoji:"🍚" },
+  "spring roll": { cal:165, protein:3, carbs:22, fat:7, fiber:2, healthy:false, category:"chinese", emoji:"🥢" },
+  "dim sum": { cal:180, protein:6, carbs:24, fat:7, fiber:1, healthy:false, category:"chinese", emoji:"🥟" },
+  "tofu": { cal:76, protein:8, carbs:2, fat:4, fiber:0, healthy:true, category:"protein", emoji:"⬜" },
+  "mapo tofu": { cal:210, protein:10, carbs:8, fat:15, fiber:2, healthy:false, category:"chinese", emoji:"⬜" },
+  "edamame": { cal:122, protein:11, carbs:10, fat:5, fiber:5, healthy:true, category:"chinese", emoji:"🫘" },
+  "miso soup": { cal:40, protein:3, carbs:5, fat:1, fiber:1, healthy:true, category:"japanese", emoji:"🍵" },
+  "ramen": { cal:380, protein:14, carbs:55, fat:12, fiber:2, healthy:false, category:"japanese", emoji:"🍜" },
+  "veg ramen": { cal:320, protein:10, carbs:50, fat:8, fiber:3, healthy:false, category:"japanese", emoji:"🍜" },
+  "pad thai": { cal:357, protein:13, carbs:44, fat:14, fiber:2, healthy:false, category:"thai", emoji:"🍜" },
+  "green curry": { cal:280, protein:8, carbs:18, fat:20, fiber:4, healthy:false, category:"thai", emoji:"🍛" },
+  "tom yum": { cal:100, protein:4, carbs:8, fat:5, fiber:2, healthy:true, category:"thai", emoji:"🍲" },
+  "chow mein": { cal:290, protein:8, carbs:44, fat:9, fiber:3, healthy:false, category:"chinese", emoji:"🍜" },
+  "wonton soup": { cal:180, protein:7, carbs:26, fat:5, fiber:1, healthy:true, category:"chinese", emoji:"🍲" },
+  "bok choy": { cal:13, protein:2, carbs:2, fat:0, fiber:1, healthy:true, category:"vegetable", emoji:"🥬" },
+  "kimchi": { cal:23, protein:2, carbs:4, fat:0, fiber:2, healthy:true, category:"korean", emoji:"🌶" },
+
+  // ── FAST FOOD & RESTAURANT (VEG) ─────────────────────────
+  "veg burger": { cal:400, protein:12, carbs:50, fat:16, fiber:4, healthy:false, category:"fast food", emoji:"🍔" },
+  "veggie burger": { cal:400, protein:12, carbs:50, fat:16, fiber:4, healthy:false, category:"fast food", emoji:"🍔" },
+  "fries": { cal:365, protein:4, carbs:48, fat:17, fiber:4, healthy:false, category:"fast food", emoji:"🍟" },
+  "pizza": { cal:285, protein:11, carbs:36, fat:10, fiber:2, healthy:false, category:"fast food", emoji:"🍕" },
+  "cheese pizza": { cal:320, protein:13, carbs:36, fat:13, fiber:2, healthy:false, category:"fast food", emoji:"🍕" },
+  "veg pizza": { cal:260, protein:10, carbs:34, fat:9, fiber:3, healthy:false, category:"fast food", emoji:"🍕" },
+  "wrap": { cal:310, protein:10, carbs:42, fat:11, fiber:4, healthy:false, category:"fast food", emoji:"🌯" },
+  "veg wrap": { cal:280, protein:9, carbs:40, fat:9, fiber:5, healthy:false, category:"fast food", emoji:"🌯" },
+  "pasta": { cal:220, protein:8, carbs:43, fat:1, fiber:2, healthy:false, category:"italian", emoji:"🍝" },
+  "mac and cheese": { cal:310, protein:11, carbs:40, fat:12, fiber:1, healthy:false, category:"fast food", emoji:"🧀" },
+  "grilled cheese": { cal:290, protein:12, carbs:28, fat:16, fiber:1, healthy:false, category:"fast food", emoji:"🧀" },
+  "nachos": { cal:346, protein:8, carbs:36, fat:19, fiber:4, healthy:false, category:"fast food", emoji:"🌽" },
+  "onion rings": { cal:411, protein:5, carbs:43, fat:25, fiber:2, healthy:false, category:"fast food", emoji:"🧅" },
+  "garlic bread": { cal:200, protein:5, carbs:28, fat:8, fiber:1, healthy:false, category:"fast food", emoji:"🍞" },
+  "quesadilla": { cal:350, protein:13, carbs:36, fat:17, fiber:2, healthy:false, category:"fast food", emoji:"🫓" },
+  "chips": { cal:149, protein:2, carbs:15, fat:9, fiber:1, healthy:false, category:"snack", emoji:"🥔" },
+  "popcorn": { cal:106, protein:3, carbs:21, fat:1, fiber:4, healthy:true, category:"snack", emoji:"🍿" },
+  "sandwich": { cal:280, protein:10, carbs:38, fat:9, fiber:3, healthy:false, category:"fast food", emoji:"🥪" },
+  "veg sandwich": { cal:240, protein:9, carbs:36, fat:7, fiber:4, healthy:true, category:"fast food", emoji:"🥪" },
+
+  // ── GYM & PROTEIN FOODS ───────────────────────────────────
+  "protein shake": { cal:160, protein:30, carbs:8, fat:3, fiber:1, healthy:true, category:"gym", emoji:"💪" },
+  "whey protein": { cal:120, protein:25, carbs:3, fat:1, fiber:0, healthy:true, category:"gym", emoji:"💪" },
+  "protein bar": { cal:200, protein:20, carbs:22, fat:7, fiber:3, healthy:true, category:"gym", emoji:"🍫" },
+  "granola bar": { cal:190, protein:4, carbs:30, fat:7, fiber:2, healthy:false, category:"gym", emoji:"🟫" },
+  "trail mix": { cal:173, protein:5, carbs:16, fat:11, fiber:2, healthy:true, category:"gym", emoji:"🥜" },
+  "peanuts": { cal:166, protein:7, carbs:6, fat:14, fiber:2, healthy:true, category:"nuts", emoji:"🥜" },
+  "peanut butter": { cal:188, protein:8, carbs:7, fat:16, fiber:2, healthy:false, category:"nuts", emoji:"🥜" },
+  "almonds": { cal:164, protein:6, carbs:6, fat:14, fiber:3, healthy:true, category:"nuts", emoji:"🌰" },
+  "walnuts": { cal:185, protein:4, carbs:4, fat:18, fiber:2, healthy:true, category:"nuts", emoji:"🌰" },
+  "cashews": { cal:157, protein:5, carbs:9, fat:12, fiber:1, healthy:false, category:"nuts", emoji:"🌰" },
+  "chia seeds": { cal:137, protein:4, carbs:12, fat:9, fiber:10, healthy:true, category:"gym", emoji:"🌱" },
+  "flax seeds": { cal:150, protein:5, carbs:8, fat:12, fiber:8, healthy:true, category:"gym", emoji:"🌱" },
+  "hemp seeds": { cal:166, protein:10, carbs:3, fat:15, fiber:1, healthy:true, category:"gym", emoji:"🌱" },
+  "quinoa": { cal:222, protein:8, carbs:39, fat:4, fiber:5, healthy:true, category:"gym", emoji:"🌾" },
+  "oats": { cal:158, protein:6, carbs:28, fat:3, fiber:4, healthy:true, category:"gym", emoji:"🌾" },
+  "oatmeal": { cal:158, protein:6, carbs:28, fat:3, fiber:4, healthy:true, category:"grains", emoji:"🥣" },
+  "greek yogurt": { cal:100, protein:17, carbs:6, fat:1, fiber:0, healthy:true, category:"gym", emoji:"🫙" },
+  "cottage cheese": { cal:98, protein:11, carbs:4, fat:4, fiber:0, healthy:true, category:"gym", emoji:"🧀" },
+  "energy drink": { cal:110, protein:1, carbs:28, fat:0, fiber:0, healthy:false, category:"drink", emoji:"⚡" },
+  "electrolyte drink": { cal:50, protein:0, carbs:13, fat:0, fiber:0, healthy:true, category:"drink", emoji:"💧" },
+  "bcaa": { cal:20, protein:5, carbs:0, fat:0, fiber:0, healthy:true, category:"gym", emoji:"💊" },
+  "creatine": { cal:0, protein:0, carbs:0, fat:0, fiber:0, healthy:true, category:"gym", emoji:"💊" },
+  "pea protein": { cal:120, protein:24, carbs:2, fat:2, fiber:1, healthy:true, category:"gym", emoji:"💪" },
+  "soy milk": { cal:80, protein:7, carbs:4, fat:4, fiber:1, healthy:true, category:"gym", emoji:"🥛" },
+  "almond milk": { cal:39, protein:1, carbs:3, fat:3, fiber:1, healthy:true, category:"drink", emoji:"🥛" },
+  "banana shake": { cal:220, protein:8, carbs:38, fat:4, fiber:3, healthy:true, category:"gym", emoji:"🥤" },
+
+  // ── FRUITS ────────────────────────────────────────────────
+  "banana": { cal:89, protein:1, carbs:23, fat:0, fiber:3, healthy:true, category:"fruit", emoji:"🍌" },
+  "apple": { cal:95, protein:0, carbs:25, fat:0, fiber:4, healthy:true, category:"fruit", emoji:"🍎" },
+  "orange": { cal:62, protein:1, carbs:15, fat:0, fiber:3, healthy:true, category:"fruit", emoji:"🍊" },
+  "mango": { cal:99, protein:1, carbs:25, fat:1, fiber:3, healthy:true, category:"fruit", emoji:"🥭" },
+  "grapes": { cal:67, protein:1, carbs:17, fat:0, fiber:1, healthy:true, category:"fruit", emoji:"🍇" },
+  "watermelon": { cal:46, protein:1, carbs:11, fat:0, fiber:1, healthy:true, category:"fruit", emoji:"🍉" },
+  "avocado": { cal:234, protein:3, carbs:12, fat:21, fiber:10, healthy:true, category:"fruit", emoji:"🥑" },
+  "strawberry": { cal:32, protein:1, carbs:8, fat:0, fiber:2, healthy:true, category:"fruit", emoji:"🍓" },
+  "strawberries": { cal:32, protein:1, carbs:8, fat:0, fiber:2, healthy:true, category:"fruit", emoji:"🍓" },
+  "blueberry": { cal:57, protein:1, carbs:14, fat:0, fiber:2, healthy:true, category:"fruit", emoji:"🫐" },
+  "blueberries": { cal:57, protein:1, carbs:14, fat:0, fiber:2, healthy:true, category:"fruit", emoji:"🫐" },
+  "pineapple": { cal:82, protein:1, carbs:22, fat:0, fiber:2, healthy:true, category:"fruit", emoji:"🍍" },
+  "papaya": { cal:43, protein:1, carbs:11, fat:0, fiber:2, healthy:true, category:"fruit", emoji:"🍈" },
+  "guava": { cal:68, protein:3, carbs:14, fat:1, fiber:5, healthy:true, category:"fruit", emoji:"🟢" },
+  "pomegranate": { cal:83, protein:2, carbs:19, fat:1, fiber:4, healthy:true, category:"fruit", emoji:"🔴" },
+  "kiwi": { cal:61, protein:1, carbs:15, fat:1, fiber:3, healthy:true, category:"fruit", emoji:"🥝" },
+  "lemon": { cal:17, protein:1, carbs:5, fat:0, fiber:2, healthy:true, category:"fruit", emoji:"🍋" },
+  "coconut": { cal:354, protein:3, carbs:15, fat:33, fiber:9, healthy:false, category:"fruit", emoji:"🥥" },
+  "dates": { cal:282, protein:2, carbs:75, fat:0, fiber:8, healthy:false, category:"fruit", emoji:"🟤" },
+  "fig": { cal:74, protein:1, carbs:19, fat:0, fiber:3, healthy:true, category:"fruit", emoji:"🟣" },
+  "peach": { cal:59, protein:1, carbs:15, fat:0, fiber:2, healthy:true, category:"fruit", emoji:"🍑" },
+  "pear": { cal:101, protein:1, carbs:27, fat:0, fiber:5, healthy:true, category:"fruit", emoji:"🍐" },
+  "cherry": { cal:50, protein:1, carbs:12, fat:0, fiber:2, healthy:true, category:"fruit", emoji:"🍒" },
+  "lychee": { cal:66, protein:1, carbs:17, fat:0, fiber:1, healthy:true, category:"fruit", emoji:"🔴" },
+  "jackfruit": { cal:95, protein:2, carbs:23, fat:1, fiber:2, healthy:true, category:"fruit", emoji:"🟡" },
+
+  // ── VEGETABLES ────────────────────────────────────────────
+  "salad": { cal:120, protein:4, carbs:15, fat:5, fiber:5, healthy:true, category:"vegetable", emoji:"🥗" },
+  "broccoli": { cal:55, protein:4, carbs:11, fat:1, fiber:5, healthy:true, category:"vegetable", emoji:"🥦" },
+  "spinach": { cal:23, protein:3, carbs:4, fat:0, fiber:2, healthy:true, category:"vegetable", emoji:"🥬" },
+  "carrot": { cal:41, protein:1, carbs:10, fat:0, fiber:3, healthy:true, category:"vegetable", emoji:"🥕" },
+  "tomato": { cal:22, protein:1, carbs:5, fat:0, fiber:2, healthy:true, category:"vegetable", emoji:"🍅" },
+  "cucumber": { cal:16, protein:1, carbs:4, fat:0, fiber:1, healthy:true, category:"vegetable", emoji:"🥒" },
+  "potato": { cal:161, protein:4, carbs:37, fat:0, fiber:4, healthy:true, category:"vegetable", emoji:"🥔" },
+  "sweet potato": { cal:103, protein:2, carbs:24, fat:0, fiber:4, healthy:true, category:"vegetable", emoji:"🍠" },
+  "onion": { cal:44, protein:1, carbs:10, fat:0, fiber:2, healthy:true, category:"vegetable", emoji:"🧅" },
+  "garlic": { cal:149, protein:6, carbs:33, fat:1, fiber:2, healthy:true, category:"vegetable", emoji:"🧄" },
+  "ginger": { cal:80, protein:2, carbs:18, fat:1, fiber:2, healthy:true, category:"vegetable", emoji:"🌿" },
+  "bell pepper": { cal:31, protein:1, carbs:6, fat:0, fiber:2, healthy:true, category:"vegetable", emoji:"🫑" },
+  "capsicum": { cal:31, protein:1, carbs:6, fat:0, fiber:2, healthy:true, category:"vegetable", emoji:"🫑" },
+  "cauliflower": { cal:25, protein:2, carbs:5, fat:0, fiber:2, healthy:true, category:"vegetable", emoji:"🥦" },
+  "peas": { cal:81, protein:5, carbs:14, fat:0, fiber:5, healthy:true, category:"vegetable", emoji:"🫛" },
+  "corn": { cal:132, protein:5, carbs:29, fat:2, fiber:3, healthy:true, category:"vegetable", emoji:"🌽" },
+  "mushroom": { cal:22, protein:3, carbs:3, fat:0, fiber:1, healthy:true, category:"vegetable", emoji:"🍄" },
+  "eggplant": { cal:35, protein:1, carbs:9, fat:0, fiber:3, healthy:true, category:"vegetable", emoji:"🍆" },
+  "zucchini": { cal:17, protein:1, carbs:3, fat:0, fiber:1, healthy:true, category:"vegetable", emoji:"🥒" },
+  "kale": { cal:49, protein:4, carbs:9, fat:1, fiber:4, healthy:true, category:"vegetable", emoji:"🥬" },
+  "celery": { cal:6, protein:0, carbs:1, fat:0, fiber:1, healthy:true, category:"vegetable", emoji:"🥬" },
+  "beetroot": { cal:43, protein:2, carbs:10, fat:0, fiber:3, healthy:true, category:"vegetable", emoji:"🔴" },
+  "radish": { cal:16, protein:1, carbs:3, fat:0, fiber:2, healthy:true, category:"vegetable", emoji:"🔴" },
+  "ladyfinger": { cal:33, protein:2, carbs:7, fat:0, fiber:3, healthy:true, category:"vegetable", emoji:"🟢" },
+  "okra": { cal:33, protein:2, carbs:7, fat:0, fiber:3, healthy:true, category:"vegetable", emoji:"🟢" },
+  "bitter gourd": { cal:17, protein:1, carbs:4, fat:0, fiber:3, healthy:true, category:"vegetable", emoji:"🟢" },
+  "bottle gourd": { cal:14, protein:1, carbs:3, fat:0, fiber:1, healthy:true, category:"vegetable", emoji:"🥒" },
+  "drumstick": { cal:37, protein:2, carbs:8, fat:0, fiber:4, healthy:true, category:"vegetable", emoji:"🟢" },
+
+  // ── GRAINS & STAPLES ──────────────────────────────────────
+  "rice": { cal:206, protein:4, carbs:45, fat:0, fiber:1, healthy:true, category:"grains", emoji:"🍚" },
+  "brown rice": { cal:216, protein:5, carbs:45, fat:2, fiber:4, healthy:true, category:"grains", emoji:"🍚" },
+  "toast": { cal:80, protein:3, carbs:15, fat:1, fiber:1, healthy:true, category:"grains", emoji:"🍞" },
+  "bread": { cal:80, protein:3, carbs:15, fat:1, fiber:1, healthy:true, category:"grains", emoji:"🍞" },
+  "whole wheat bread": { cal:69, protein:4, carbs:12, fat:1, fiber:2, healthy:true, category:"grains", emoji:"🍞" },
+  "noodles": { cal:138, protein:5, carbs:25, fat:2, fiber:1, healthy:true, category:"grains", emoji:"🍜" },
+  "lentils": { cal:116, protein:9, carbs:20, fat:0, fiber:8, healthy:true, category:"protein", emoji:"🫘" },
+  "beans": { cal:127, protein:9, carbs:23, fat:0, fiber:6, healthy:true, category:"protein", emoji:"🫘" },
+  "chickpeas": { cal:164, protein:9, carbs:27, fat:3, fiber:8, healthy:true, category:"protein", emoji:"🫘" },
+  "soybeans": { cal:173, protein:17, carbs:10, fat:9, fiber:6, healthy:true, category:"protein", emoji:"🫘" },
+
+  // ── DRINKS ────────────────────────────────────────────────
+  "smoothie": { cal:180, protein:4, carbs:38, fat:1, fiber:4, healthy:true, category:"drink", emoji:"🥤" },
+  "coffee": { cal:5, protein:0, carbs:0, fat:0, fiber:0, healthy:true, category:"drink", emoji:"☕" },
+  "tea": { cal:2, protein:0, carbs:0, fat:0, fiber:0, healthy:true, category:"drink", emoji:"🍵" },
+  "green tea": { cal:2, protein:0, carbs:0, fat:0, fiber:0, healthy:true, category:"drink", emoji:"🍵" },
+  "masala chai": { cal:60, protein:2, carbs:8, fat:2, fiber:0, healthy:true, category:"drink", emoji:"☕" },
+  "milk tea": { cal:90, protein:3, carbs:15, fat:2, fiber:0, healthy:false, category:"drink", emoji:"🧋" },
+  "chai": { cal:60, protein:2, carbs:10, fat:2, fiber:0, healthy:false, category:"drink", emoji:"☕" },
+  "ginger tea": { cal:30, protein:1, carbs:7, fat:0, fiber:0, healthy:true, category:"drink", emoji:"🍵" },
+  "lemon tea": { cal:25, protein:0, carbs:7, fat:0, fiber:0, healthy:true, category:"drink", emoji:"🍵" },
+  "soda": { cal:140, protein:0, carbs:39, fat:0, fiber:0, healthy:false, category:"drink", emoji:"🥤" },
+  "juice": { cal:112, protein:1, carbs:26, fat:0, fiber:0, healthy:false, category:"drink", emoji:"🧃" },
+  "coconut water": { cal:46, protein:2, carbs:9, fat:0, fiber:3, healthy:true, category:"drink", emoji:"🥥" },
+  "lemonade": { cal:99, protein:0, carbs:26, fat:0, fiber:0, healthy:false, category:"drink", emoji:"🍋" },
+  "water": { cal:0, protein:0, carbs:0, fat:0, fiber:0, healthy:true, category:"drink", emoji:"💧" },
+
+  // ── SWEETS & SNACKS ───────────────────────────────────────
+  "chocolate": { cal:170, protein:2, carbs:25, fat:9, fiber:1, healthy:false, category:"sweets", emoji:"🍫" },
+  "dark chocolate": { cal:155, protein:2, carbs:17, fat:9, fiber:2, healthy:false, category:"sweets", emoji:"🍫" },
+  "cake": { cal:352, protein:5, carbs:55, fat:14, fiber:1, healthy:false, category:"sweets", emoji:"🎂" },
+  "cookie": { cal:148, protein:2, carbs:20, fat:7, fiber:0, healthy:false, category:"sweets", emoji:"🍪" },
+  "donut": { cal:253, protein:4, carbs:31, fat:14, fiber:1, healthy:false, category:"sweets", emoji:"🍩" },
+  "ice cream": { cal:207, protein:4, carbs:28, fat:11, fiber:0, healthy:false, category:"sweets", emoji:"🍦" },
+  "honey": { cal:64, protein:0, carbs:17, fat:0, fiber:0, healthy:true, category:"sweets", emoji:"🍯" },
+  "granola": { cal:200, protein:5, carbs:30, fat:8, fiber:3, healthy:false, category:"snack", emoji:"🥣" },
+  "pancake": { cal:227, protein:6, carbs:38, fat:7, fiber:1, healthy:false, category:"breakfast", emoji:"🥞" },
+  "waffles": { cal:210, protein:5, carbs:35, fat:7, fiber:1, healthy:false, category:"breakfast", emoji:"🧇" },
+  "soup": { cal:90, protein:5, carbs:12, fat:2, fiber:2, healthy:true, category:"meal", emoji:"🍲" },
+  "popcorn": { cal:106, protein:3, carbs:21, fat:1, fiber:4, healthy:true, category:"snack", emoji:"🍿" },
+};
+
+const MEAL_RESPONSES = {
+  healthy: [
+    "Great choice! 💚 That's a nutritious option.",
+    "Nice! You're eating well today 🌿",
+    "Healthy pick! Your body will thank you 💪",
+    "Excellent! Good nutrients there 🥗",
+    "Smart eating! Keep it up 🙌"
+  ],
+  unhealthy: [
+    "Logged! It's okay to indulge sometimes 😊 Balance it with something healthy next.",
+    "Added! Maybe pair it with some veggies later? 🥦",
+    "Got it! High in calories — try to add some fiber next meal 🌿",
+    "Noted! A little treat never hurt — just watch the portions 👀",
+    "Logged! Consider a lighter next meal to balance things out 💡"
+  ],
+  moderate: [
+    "Added! That's a moderate choice 👍",
+    "Logged! Not bad — fairly balanced.",
+    "Got it! A decent option overall 🙂"
+  ]
+};
+
+let meals = [];
+let totals = { cal:0, protein:0, carbs:0, fat:0, fiber:0 };
+
+function getTime() {
+  return new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+}
+
+function addMsg(text, type, extras) {
+  const chat = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg ' + type;
+  let content = text;
+  if (extras && extras.cal) content += `<br><span class="calories-tag">${extras.cal} kcal</span>`;
+  content += `<div class="msg-time">${getTime()}</div>`;
+  div.innerHTML = content;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function showTyping() {
+  const chat = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'typing-indicator'; div.id = 'typing';
+  div.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function hideTyping() {
+  const t = document.getElementById('typing');
+  if (t) t.remove();
+}
+
+function parseMeal(text) {
+  const lower = text.toLowerCase();
+  let multiplier = 1;
+
+  // Strip measurement units first so "250ml" or "3 tbsp" don't get used as serving count
+  const measurementPattern = /\d+(\.\d+)?\s*(ml|l\b|g\b|kg|mg|tbsp|tsp|tablespoon|teaspoon|cup|cups|oz|lb|lbs|litre|liter|gram|grams)/gi;
+  const cleaned = lower.replace(measurementPattern, '');
+
+  const wordNums = { 'one':1,'two':2,'three':3,'four':4,'five':5,'six':6,'half':0.5,'a':1,'an':1,'couple':2,'few':3 };
+
+  // Only accept small numbers (1-20) as serving quantities
+  const words = cleaned.split(/[\s,\-]+/);
+  for (const w of words) {
+    const n = parseFloat(w);
+    if (!isNaN(n) && n >= 1 && n <= 20) { multiplier = n; break; }
+    if (wordNums[w] !== undefined) { multiplier = wordNums[w]; break; }
+  }
+
+  if (lower.includes('large') || lower.includes('big') || lower.includes('extra')) multiplier *= 1.5;
+  if (lower.includes('small') || lower.includes('mini')) multiplier *= 0.7;
+  if (/\bhalf\b/.test(lower) && multiplier === 1) multiplier = 0.5;
+  multiplier = Math.min(multiplier, 10);
+
+  // Match longest key first so "masala chai" beats "chai"
+  const sortedKeys = Object.keys(FOOD_DB).sort((a, b) => b.length - a.length);
+  for (const key of sortedKeys) {
+    if (lower.includes(key)) {
+      const food = FOOD_DB[key];
+      return {
+        name: text.trim(), key, emoji: food.emoji,
+        cal: Math.round(food.cal * multiplier),
+        protein: Math.round(food.protein * multiplier),
+        carbs: Math.round(food.carbs * multiplier),
+        fat: Math.round(food.fat * multiplier),
+        fiber: Math.round(food.fiber * multiplier),
+        healthy: food.healthy, category: food.category, time: getTime()
+      };
+    }
+  }
+  return null;
+}
+
+function updateDashboard() {
+  const calPct = Math.min(100, Math.round((totals.cal / 2000) * 100));
+  const healthyCount = meals.filter(m => m.healthy === true).length;
+  const unhealthyCount = meals.filter(m => m.healthy === false).length;
+  const total = meals.length;
+  const score = total === 0 ? 0 : Math.round((healthyCount / total) * 100);
+
+  document.getElementById('stat-cal').innerHTML = `${totals.cal}<span class="stat-unit">kcal</span>`;
+  document.getElementById('stat-score').textContent = total === 0 ? '—' : score + '%';
+  document.getElementById('stat-healthy').textContent = healthyCount;
+  document.getElementById('stat-unhealthy').textContent = unhealthyCount;
+
+  const calColor = calPct > 90 ? '#e24b4a' : '#25D366';
+  document.getElementById('bar-cal').style.width = calPct + '%';
+  document.getElementById('bar-cal').style.background = calColor;
+  document.getElementById('bar-score').style.width = score + '%';
+  document.getElementById('bar-score').style.background = score > 70 ? '#25D366' : score > 40 ? '#ef9f27' : '#e24b4a';
+
+  document.getElementById('macro-cal').textContent = totals.cal;
+  document.getElementById('bar-cal2').style.width = calPct + '%';
+  document.getElementById('bar-cal2').style.background = calColor;
+  document.getElementById('val-protein').textContent = totals.protein + 'g';
+  document.getElementById('val-carbs').textContent = totals.carbs + 'g';
+  document.getElementById('val-fats').textContent = totals.fat + 'g';
+  document.getElementById('val-fiber').textContent = totals.fiber + 'g';
+  document.getElementById('bar-protein').style.width = Math.min(100, Math.round((totals.protein/50)*100)) + '%';
+  document.getElementById('bar-carbs').style.width = Math.min(100, Math.round((totals.carbs/130)*100)) + '%';
+  document.getElementById('bar-fats').style.width = Math.min(100, Math.round((totals.fat/65)*100)) + '%';
+  document.getElementById('bar-fiber').style.width = Math.min(100, Math.round((totals.fiber/25)*100)) + '%';
+
+  if (total > 0) {
+    document.getElementById('overview-empty').style.display = 'none';
+    document.getElementById('score-card').style.display = 'flex';
+    document.getElementById('reset-btn').style.display = 'block';
+    document.getElementById('ring-score').textContent = score;
+    const offset = 170 - (score / 100) * 170;
+    document.getElementById('ring-circle').style.strokeDashoffset = offset;
+    document.getElementById('ring-circle').style.stroke = score > 70 ? '#25D366' : score > 40 ? '#ef9f27' : '#e24b4a';
+
+    let label, desc;
+    if (score >= 80) { label = 'Excellent diet!'; desc = 'Your choices today are very nutritious. Keep it up!'; }
+    else if (score >= 60) { label = 'Good balance'; desc = 'Mostly healthy choices. A few areas to improve.'; }
+    else if (score >= 40) { label = 'Could be better'; desc = 'Mix in more fruits, veggies & lean proteins.'; }
+    else { label = 'Needs improvement'; desc = 'Try to add more whole foods and reduce processed items.'; }
+
+    document.getElementById('score-label').textContent = label;
+    document.getElementById('score-desc').textContent = desc;
+  }
+
+  updateMealLog();
+  updateTips(score, healthyCount, unhealthyCount);
+  saveTodayData();
+}
+
+function updateMealLog() {
+  const log = document.getElementById('meal-log');
+  if (meals.length === 0) {
+    log.innerHTML = '<div class="empty-state"><div class="big-emoji">🥣</div>No meals logged yet!</div>';
+    return;
+  }
+  log.innerHTML = meals.map(m => {
+    const cls = m.healthy === true ? 'healthy' : m.healthy === false ? 'unhealthy' : 'moderate';
+    return `<div class="meal-item">
+      <div class="meal-icon ${cls}">${m.emoji}</div>
+      <div class="meal-info">
+        <div class="meal-name">${m.name}</div>
+        <div class="meal-meta">${m.time} · <span class="${cls}-tag">${cls}</span> · ${m.category}</div>
+      </div>
+      <div class="meal-cal ${cls}-tag">${m.cal} kcal</div>
+    </div>`;
+  }).join('');
+}
+
+function updateTips(score, healthyCount, unhealthyCount) {
+  const el = document.getElementById('tips-list');
+  if (meals.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="big-emoji">💡</div>Log some meals and I\'ll give you personalized tips!</div>';
+    return;
+  }
+  const tips = [];
+  if (totals.protein < 30) tips.push({ icon:'💪', text:'You\'re low on protein. Add chicken, eggs, lentils, or yogurt.' });
+  if (totals.fiber < 10) tips.push({ icon:'🥦', text:'Boost your fiber! Try broccoli, beans, apples, or avocado.' });
+  if (totals.cal > 1800) tips.push({ icon:'⚠️', text:'You\'re close to your daily calorie limit. Consider lighter options.' });
+  if (totals.cal < 500 && meals.length >= 2) tips.push({ icon:'🍽️', text:'You might be under-eating. Make sure you\'re getting enough nutrients.' });
+  if (unhealthyCount >= 2) tips.push({ icon:'🌿', text:'You\'ve had several less-healthy items. Balance with a salad or fruit.' });
+  if (healthyCount >= 3) tips.push({ icon:'🌟', text:'Great work making healthy choices today! Keep it up.' });
+  if (totals.fat > 50) tips.push({ icon:'🫀', text:'Fat intake is high. Reduce fried foods and processed snacks.' });
+  if (meals.some(m => m.category === 'drink' && !m.healthy)) tips.push({ icon:'💧', text:'Sugary drinks add empty calories. Switch to water or herbal tea.' });
+  if (tips.length === 0) tips.push({ icon:'✅', text:'You\'re on track! Keep eating mindfully and stay hydrated.' });
+
+  el.innerHTML = tips.map(t =>
+    `<div class="suggestion-card"><div class="suggestion-icon">${t.icon}</div><div class="suggestion-text">${t.text}</div></div>`
+  ).join('');
+}
+
+function switchTab(name, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  el.classList.add('active');
+}
+
+function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  addMsg(text, 'out');
+  input.value = '';
+  showTyping();
+  setTimeout(() => {
+    hideTyping();
+    const meal = parseMeal(text);
+    if (meal) {
+      meals.push(meal);
+      totals.cal += meal.cal;
+      totals.protein += meal.protein;
+      totals.carbs += meal.carbs;
+      totals.fat += meal.fat;
+      totals.fiber += meal.fiber;
+      const resps = meal.healthy === true ? MEAL_RESPONSES.healthy : meal.healthy === false ? MEAL_RESPONSES.unhealthy : MEAL_RESPONSES.moderate;
+      addMsg(resps[Math.floor(Math.random() * resps.length)], 'in', { cal: meal.cal });
+      updateDashboard();
+    } else {
+      const fallbacks = [
+        "Hmm, I don't recognize that food yet 🤔 Try simpler terms like 'chicken rice' or '2 eggs'.",
+        "I couldn't identify that. Try 'pizza', 'salad', or 'banana smoothie'!",
+        "I'm still learning! Could you rephrase? Try 'oatmeal', 'burger', or 'salmon'."
+      ];
+      addMsg(fallbacks[Math.floor(Math.random() * fallbacks.length)], 'in');
+    }
+  }, 800 + Math.random() * 500);
+}
+
+function resetAll() {
+  if (!confirm('Reset today\'s food log?')) return;
+  meals = [];
+  totals = { cal:0, protein:0, carbs:0, fat:0, fiber:0 };
+  document.getElementById('overview-empty').style.display = '';
+  document.getElementById('score-card').style.display = 'none';
+  document.getElementById('reset-btn').style.display = 'none';
+  updateDashboard();
+  localStorage.removeItem('mealbuddy_today');
+}
+
+function saveTodayData() {
+  try {
+    const today = new Date().toDateString();
+    localStorage.setItem('mealbuddy_today', JSON.stringify({ date: today, meals, totals }));
+  } catch(e) {}
+}
+
+function loadTodayData() {
+  try {
+    const raw = localStorage.getItem('mealbuddy_today');
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (data.date !== new Date().toDateString()) return;
+    meals = data.meals;
+    totals = data.totals;
+    updateDashboard();
+  } catch(e) {}
+}
+
+function showDash() {
+  document.getElementById('dashboard').classList.add('show');
+  document.getElementById('chat-panel').classList.add('hide');
+}
+
+function showChat() {
+  document.getElementById('dashboard').classList.remove('show');
+  document.getElementById('chat-panel').classList.remove('hide');
+}
+
+// ── RECIPE SYSTEM ─────────────────────────────────────────────
+
+let userRecipes = [];
+let editingRecipeId = null;
+
+function loadRecipes() {
+  try {
+    const raw = localStorage.getItem('mealbuddy_recipes');
+    if (raw) userRecipes = JSON.parse(raw);
+  } catch(e) { userRecipes = []; }
+  renderRecipeList();
+  injectRecipesIntoFoodDB();
+}
+
+function saveRecipes() {
+  try {
+    localStorage.setItem('mealbuddy_recipes', JSON.stringify(userRecipes));
+  } catch(e) {}
+}
+
+function injectRecipesIntoFoodDB() {
+  // Make all user recipes recognisable in chat
+  userRecipes.forEach(r => {
+    FOOD_DB[r.name.toLowerCase()] = {
+      cal: r.cal, protein: r.protein, carbs: r.carbs,
+      fat: r.fat, fiber: r.fiber,
+      healthy: r.healthy, category: r.category, emoji: r.emoji
+    };
+  });
+}
+
+function openRecipeModal(id) {
+  editingRecipeId = id || null;
+  const modal = document.getElementById('recipe-modal-bg');
+  modal.style.display = 'flex';
+  document.getElementById('modal-error').style.display = 'none';
+
+  if (id) {
+    // Edit mode — populate fields
+    const r = userRecipes.find(x => x.id === id);
+    if (!r) return;
+    document.getElementById('modal-title').textContent = 'Edit Recipe';
+    document.getElementById('save-btn').textContent = 'Update Recipe';
+    document.getElementById('r-name').value = r.name;
+    document.getElementById('r-emoji').value = r.emoji;
+    document.getElementById('r-cal').value = r.cal;
+    document.getElementById('r-servings').value = r.servings || 1;
+    document.getElementById('r-protein').value = r.protein;
+    document.getElementById('r-carbs').value = r.carbs;
+    document.getElementById('r-fat').value = r.fat;
+    document.getElementById('r-fiber').value = r.fiber;
+    document.getElementById('r-category').value = r.category;
+    document.getElementById('r-notes').value = r.notes || '';
+    document.querySelectorAll('input[name="health"]').forEach(radio => {
+      radio.checked = radio.value === String(r.healthy);
+    });
+  } else {
+    // Add mode — clear fields
+    document.getElementById('modal-title').textContent = 'Add New Recipe';
+    document.getElementById('save-btn').textContent = 'Save Recipe';
+    ['r-name','r-emoji','r-cal','r-protein','r-carbs','r-fat','r-fiber','r-notes'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('r-servings').value = 1;
+    document.getElementById('r-category').value = 'indian';
+    document.querySelector('input[name="health"][value="true"]').checked = true;
+  }
+}
+
+function closeRecipeModal() {
+  document.getElementById('recipe-modal-bg').style.display = 'none';
+  editingRecipeId = null;
+}
+
+function saveRecipe() {
+  const name = document.getElementById('r-name').value.trim();
+  const cal  = parseInt(document.getElementById('r-cal').value);
+  const errEl = document.getElementById('modal-error');
+
+  if (!name) { errEl.textContent = 'Please enter a recipe name.'; errEl.style.display='block'; return; }
+  if (!cal || cal <= 0) { errEl.textContent = 'Please enter a valid calorie count.'; errEl.style.display='block'; return; }
+
+  errEl.style.display = 'none';
+
+  const recipe = {
+    id: editingRecipeId || ('r_' + Date.now()),
+    name,
+    emoji:    document.getElementById('r-emoji').value.trim() || '🍲',
+    cal,
+    servings: parseInt(document.getElementById('r-servings').value) || 1,
+    protein:  parseInt(document.getElementById('r-protein').value) || 0,
+    carbs:    parseInt(document.getElementById('r-carbs').value)   || 0,
+    fat:      parseInt(document.getElementById('r-fat').value)     || 0,
+    fiber:    parseInt(document.getElementById('r-fiber').value)   || 0,
+    category: document.getElementById('r-category').value,
+    healthy:  document.querySelector('input[name="health"]:checked').value === 'true',
+    notes:    document.getElementById('r-notes').value.trim(),
+  };
+
+  if (editingRecipeId) {
+    const idx = userRecipes.findIndex(x => x.id === editingRecipeId);
+    if (idx !== -1) userRecipes[idx] = recipe;
+  } else {
+    userRecipes.push(recipe);
+  }
+
+  saveRecipes();
+  injectRecipesIntoFoodDB();
+  renderRecipeList();
+  closeRecipeModal();
+
+  // Confirm in chat
+  const action = editingRecipeId ? 'updated' : 'saved';
+  addMsg(`Recipe "${name}" ${action}! 📖 Type "${name.toLowerCase()}" in chat to log it.`, 'in');
+}
+
+function deleteRecipe(id) {
+  const r = userRecipes.find(x => x.id === id);
+  if (!r) return;
+  if (!confirm(`Delete recipe "${r.name}"?`)) return;
+  userRecipes = userRecipes.filter(x => x.id !== id);
+  delete FOOD_DB[r.name.toLowerCase()];
+  saveRecipes();
+  renderRecipeList();
+}
+
+function logRecipeFromDash(id) {
+  const r = userRecipes.find(x => x.id === id);
+  if (!r) return;
+  // Switch to chat view on mobile
+  showChat();
+  // Simulate logging it
+  const meal = {
+    name: r.name, key: r.name.toLowerCase(), emoji: r.emoji,
+    cal: r.cal, protein: r.protein, carbs: r.carbs,
+    fat: r.fat, fiber: r.fiber,
+    healthy: r.healthy, category: r.category, time: getTime()
+  };
+  meals.push(meal);
+  totals.cal += meal.cal; totals.protein += meal.protein;
+  totals.carbs += meal.carbs; totals.fat += meal.fat; totals.fiber += meal.fiber;
+  addMsg(r.name, 'out');
+  const resps = r.healthy ? MEAL_RESPONSES.healthy : MEAL_RESPONSES.unhealthy;
+  addMsg(resps[Math.floor(Math.random() * resps.length)], 'in', { cal: r.cal });
+  updateDashboard();
+}
+
+function renderRecipeList() {
+  const list = document.getElementById('recipe-list');
+  if (!list) return;
+  if (userRecipes.length === 0) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="big-emoji">📖</div>
+      No recipes yet! Click <strong>+ Add Recipe</strong> to save your own.<br><br>
+      <small style="color:var(--text-muted)">Once saved, type the recipe name in chat to log it.</small>
+    </div>`;
+    return;
+  }
+  list.innerHTML = userRecipes.map(r => `
+    <div class="recipe-card">
+      <div class="recipe-emoji-box">${r.emoji}</div>
+      <div class="recipe-info">
+        <div class="recipe-name">${r.name}</div>
+        <div class="recipe-meta">
+          <span style="color:${r.healthy ? '#25D366' : '#e24b4a'}">${r.healthy ? 'Healthy' : 'Indulgent'}</span>
+          &nbsp;·&nbsp;${r.cal} kcal
+          &nbsp;·&nbsp;P: ${r.protein}g &nbsp;C: ${r.carbs}g &nbsp;F: ${r.fat}g
+        </div>
+        ${r.notes ? `<div class="recipe-notes">${r.notes}</div>` : ''}
+      </div>
+      <div class="recipe-actions">
+        <button class="recipe-log-btn" onclick="logRecipeFromDash('${r.id}')">Log it</button>
+        <button class="recipe-del-btn" onclick="openRecipeModal('${r.id}')">Edit</button>
+        <button class="recipe-del-btn" onclick="deleteRecipe('${r.id}')">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Close modal when clicking outside
+document.getElementById('recipe-modal-bg').addEventListener('click', function(e) {
+  if (e.target === this) closeRecipeModal();
+});
+
+document.getElementById('chat-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+const now = new Date();
+const timeStr = getTime();
+document.getElementById('welcome-time').textContent = timeStr;
+document.getElementById('welcome-time2').textContent = timeStr;
+document.getElementById('dash-date').textContent = now.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
+
+loadTodayData();
+loadRecipes();
+</script>
+</body>
+</html>

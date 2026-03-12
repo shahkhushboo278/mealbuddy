@@ -6,10 +6,10 @@
 <title>MealBuddy 🥗</title>
 
 <!-- ================================================
-     GOOGLE ANALYTICS — Replace G-XXXXXXXXXX with
+     GOOGLE ANALYTICS — Replace G-VPG9TY51S6 with
      your real Measurement ID from analytics.google.com
      ================================================ -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-G-VPG9TY51S6"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-VPG9TY51S6"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
@@ -256,23 +256,58 @@
   /* ---- LAYOUT ---- */
   .app {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 380px 1fr;
     height: 100vh;
+    height: 100dvh; /* fixes mobile browser toolbar eating space */
     max-width: 1100px;
     margin: 0 auto;
+    overflow: hidden; /* prevent any child from growing beyond viewport */
+  }
+
+  /* Landscape on small screens (phones rotated) */
+  @media (max-height: 500px) and (orientation: landscape) {
+    .chat-header { padding: 8px 16px; }
+    .chat-input-area { padding: 6px 10px; }
+    .chat-input { min-height: 36px; padding: 7px 14px; }
+    .send-btn { width: 36px; height: 36px; }
+    .msg { font-size: 13px; padding: 6px 10px 3px; }
   }
 
   @media (max-width: 680px) {
-    .app { grid-template-columns: 1fr; }
-    .dashboard { display: none; }
-    .dashboard.show { display: flex; }
-    .chat-panel.hide { display: none; }
+    .app {
+      grid-template-columns: 1fr;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Both panels fill the full screen */
+    .chat-panel, .dashboard {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: transform;
+    }
+
+    /* Chat visible by default, dashboard off to the right */
+    .chat-panel  { transform: translateX(0);    z-index: 2; display: flex !important; }
+    .dashboard   { transform: translateX(100%); z-index: 3; display: flex !important; }
+
+    /* When dashboard is "shown", slide it in from right */
+    .dashboard.show { transform: translateX(0); }
+
+    /* When chat is "hidden", slide it left (behind dashboard) */
+    .chat-panel.hide { transform: translateX(-30%); }
   }
 
   /* ---- CHAT PANEL ---- */
   .chat-panel {
     display: flex;
     flex-direction: column;
+    height: 100%;          /* fill the grid cell fully */
+    min-height: 0;         /* critical: allows flex children to shrink below content size */
+    overflow: hidden;      /* panel itself never scrolls */
     background: var(--chat-bg);
     border-right: 0.5px solid var(--border);
     background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
@@ -301,25 +336,37 @@
 
   .dash-toggle-btn {
     display: none;
-    background: rgba(255,255,255,0.15);
-    border: none;
+    background: rgba(255,255,255,0.22);
+    border: 1.5px solid rgba(255,255,255,0.4);
     color: white;
-    border-radius: 8px;
-    padding: 6px 12px;
-    font-size: 12px;
+    border-radius: 20px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 500;
     font-family: 'DM Sans', sans-serif;
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+  }
+
+  .dash-toggle-btn:active {
+    background: rgba(255,255,255,0.35);
+    transform: scale(0.96);
   }
 
   @media (max-width: 680px) { .dash-toggle-btn { display: block; } }
 
   .chat-messages {
     flex: 1;
+    min-height: 0;         /* THE key fix — without this, flex:1 doesn't shrink on overflow */
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 14px;
     display: flex;
     flex-direction: column;
     gap: 6px;
+    -webkit-overflow-scrolling: touch; /* smooth momentum scroll on iOS */
   }
 
   .chat-messages::-webkit-scrollbar { width: 4px; }
@@ -394,11 +441,15 @@
 
   .chat-input-area {
     padding: 10px;
+    padding-bottom: max(10px, env(safe-area-inset-bottom)); /* iPhone notch safe area */
     display: flex;
     gap: 8px;
     align-items: flex-end;
     background: var(--chat-bg);
-    flex-shrink: 0;
+    flex-shrink: 0;        /* never shrink — always visible */
+    border-top: 0.5px solid var(--border);
+    position: relative;    /* stays in normal flow, never overlaps messages */
+    z-index: 1;
   }
 
   .chat-input {
@@ -437,6 +488,9 @@
   .dashboard {
     display: flex;
     flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
     background: var(--page-bg);
     overflow: hidden;
   }
@@ -476,7 +530,42 @@
     cursor: pointer;
   }
 
-  @media (max-width: 680px) { .dash-back-btn { display: block; } }
+  @media (max-width: 680px) {
+    .dash-back-btn {
+      display: block;
+      padding: 8px 16px;
+      font-size: 14px;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    /* Bigger tap targets on mobile */
+    .send-btn {
+      width: 46px;
+      height: 46px;
+      min-width: 46px;
+    }
+
+    .chat-input {
+      font-size: 16px; /* prevents iOS zoom on focus */
+      padding: 11px 14px;
+    }
+
+    .qr-btn {
+      padding: 9px 16px;
+      font-size: 14px;
+    }
+
+    /* Tabs scroll horizontally if too many */
+    .dash-tabs {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      flex-wrap: nowrap;
+    }
+    .dash-tabs::-webkit-scrollbar { display: none; }
+    .dash-tab { white-space: nowrap; flex-shrink: 0; }
+  }
 
   .dash-date { font-size: 11px; color: rgba(255,255,255,0.65); }
 
@@ -503,7 +592,9 @@
 
   .dash-body {
     flex: 1;
+    min-height: 0;         /* allows it to shrink and scroll inside flex parent */
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     padding: 14px;
     display: flex;
     flex-direction: column;
@@ -1832,13 +1923,30 @@ function loadTodayData() {
 }
 
 function showDash() {
-  document.getElementById('dashboard').classList.add('show');
-  document.getElementById('chat-panel').classList.add('hide');
+  const dash = document.getElementById('dashboard');
+  const chat = document.getElementById('chat-panel');
+  dash.classList.add('show');
+  chat.classList.add('hide');
+  // Scroll dashboard to top on open
+  const body = dash.querySelector('.dash-body');
+  if (body) body.scrollTop = 0;
+  // Update history tab if open
+  renderHistoryList && renderHistoryList();
 }
 
 function showChat() {
-  document.getElementById('dashboard').classList.remove('show');
-  document.getElementById('chat-panel').classList.remove('hide');
+  const dash = document.getElementById('dashboard');
+  const chat = document.getElementById('chat-panel');
+  dash.classList.remove('show');
+  chat.classList.remove('hide');
+  // Focus input after transition
+  setTimeout(() => {
+    const input = document.getElementById('chat-input');
+    if (input) input.focus();
+    // Scroll chat to bottom
+    const msgs = document.getElementById('chat-messages');
+    if (msgs) msgs.scrollTop = msgs.scrollHeight;
+  }, 320);
 }
 
 // ── RECIPE SYSTEM ─────────────────────────────────────────────

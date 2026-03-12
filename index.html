@@ -9,7 +9,7 @@
      GOOGLE ANALYTICS — Replace G-XXXXXXXXXX with
      your real Measurement ID from analytics.google.com
      ================================================ -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-VPG9TY51S6"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-G-VPG9TY51S6"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
@@ -170,6 +170,81 @@
     cursor: pointer;
   }
   .recipe-save-btn:hover { background: #1eb957; }
+
+  .history-day {
+    background: var(--card-bg);
+    border-radius: 12px;
+    border: 0.5px solid var(--border);
+    overflow: hidden;
+    animation: slideIn 0.3s ease;
+  }
+
+  .history-day-header {
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    border-bottom: 0.5px solid var(--border);
+  }
+
+  .history-day-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-main);
+  }
+
+  .history-day-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .history-score-pill {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .history-meals {
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .history-meal-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text-main);
+    padding: 3px 0;
+    border-bottom: 0.5px solid var(--border);
+  }
+
+  .history-meal-row:last-child { border-bottom: none; }
+
+  .history-meal-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .history-meal-cal {
+    font-size: 11px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    margin-left: 8px;
+  }
 
   html, body {
     height: 100%;
@@ -588,6 +663,37 @@
   .macro-bar-fill { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
   .macro-val { font-size: 12px; font-weight: 500; color: var(--text-main); width: 44px; text-align: right; flex-shrink: 0; }
 
+  .quick-replies {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    padding: 4px 0 6px;
+    align-self: flex-start;
+    max-width: 90%;
+  }
+
+  .qr-btn {
+    background: var(--bubble-in);
+    border: 1.5px solid var(--green);
+    border-radius: 18px;
+    padding: 6px 14px;
+    font-size: 13px;
+    color: var(--green-dark);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .qr-btn:hover {
+    background: var(--green);
+    color: white;
+    transform: translateY(-1px);
+  }
+
+  .qr-btn:active { transform: scale(0.96); }
+
   .empty-state {
     text-align: center;
     padding: 36px 16px;
@@ -631,11 +737,11 @@
 
     <div class="chat-messages" id="chat-messages">
       <div class="msg in">
-        Hey! I'm MealBuddy 🌱 I'm your veg nutrition buddy! Tell me what you're eating and I'll track calories, macros, health score &amp; tips. I know 200+ vegetarian foods!
+        Hey! I'm MealBuddy 🌱 Your smart veg nutrition buddy! Tell me what you ate — I'll ask if it was breakfast, lunch, dinner or a snack, and track everything for you!
         <div class="msg-time" id="welcome-time"></div>
       </div>
       <div class="msg in">
-        Try: <em>"dal roti"</em>, <em>"idli sambhar"</em>, <em>"hummus pita"</em>, <em>"protein shake"</em>, or <em>"veg burger"</em> 🌱
+        Try: <em>"Hi, I had dal roti for lunch"</em>, <em>"2 idli with sambhar"</em>, or just <em>"pizza"</em> and I'll ask for details! 🌱
         <div class="msg-time" id="welcome-time2"></div>
       </div>
     </div>
@@ -664,6 +770,7 @@
       <div class="dash-tab" onclick="switchTab('macros', this)">Macros</div>
       <div class="dash-tab" onclick="switchTab('tips', this)">Tips</div>
       <div class="dash-tab" onclick="switchTab('recipes', this)">Recipes</div>
+      <div class="dash-tab" onclick="switchTab('history', this)">History</div>
     </div>
 
     <div class="dash-body">
@@ -780,6 +887,20 @@
             <div class="big-emoji">📖</div>
             No recipes yet! Add your own recipes and log them from chat.<br><br>
             <small style="color:var(--text-muted);">Once added, just type the recipe name in chat to log it.</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- HISTORY -->
+      <div class="tab-content" id="tab-history">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div class="section-title">Past 7 Days</div>
+          <button class="recipe-add-btn" onclick="exportHistory()">⬇ Export</button>
+        </div>
+        <div id="history-list">
+          <div class="empty-state">
+            <div class="big-emoji">📅</div>
+            No history yet. Your logs from past days will appear here automatically.
           </div>
         </div>
       </div>
@@ -1308,17 +1429,38 @@ function updateMealLog() {
     log.innerHTML = '<div class="empty-state"><div class="big-emoji">🥣</div>No meals logged yet!</div>';
     return;
   }
-  log.innerHTML = meals.map(m => {
-    const cls = m.healthy === true ? 'healthy' : m.healthy === false ? 'unhealthy' : 'moderate';
-    return `<div class="meal-item">
-      <div class="meal-icon ${cls}">${m.emoji}</div>
-      <div class="meal-info">
-        <div class="meal-name">${m.name}</div>
-        <div class="meal-meta">${m.time} · <span class="${cls}-tag">${cls}</span> · ${m.category}</div>
-      </div>
-      <div class="meal-cal ${cls}-tag">${m.cal} kcal</div>
+  const mealTypeEmoji = { breakfast:'🌅', lunch:'☀️', dinner:'🌙', snack:'🍎', brunch:'🥐' };
+  const byType = {};
+  meals.forEach(m => {
+    const mt = m.mealType || 'snack';
+    if (!byType[mt]) byType[mt] = [];
+    byType[mt].push(m);
+  });
+  const order = ['breakfast','lunch','dinner','snack','brunch'];
+  let html = '';
+  order.forEach(type => {
+    if (!byType[type]) return;
+    const typeCal = byType[type].reduce((s,m) => s+m.cal, 0);
+    html += `<div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px;margin:8px 0 5px;display:flex;justify-content:space-between;">
+      <span>${mealTypeEmoji[type] || '🍽️'} ${type}</span>
+      <span style="font-weight:400">${typeCal} kcal</span>
     </div>`;
-  }).join('');
+    byType[type].forEach(m => {
+      const cls = m.healthy === true ? 'healthy' : m.healthy === false ? 'unhealthy' : 'moderate';
+      html += `<div class="meal-item" style="margin-bottom:5px;">
+        <div class="meal-icon ${cls}">${m.emoji}</div>
+        <div class="meal-info">
+          <div class="meal-name">${m.name}</div>
+          <div class="meal-meta">${m.time} · <span class="${cls}-tag">${cls}</span></div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
+          <div class="meal-cal ${cls}-tag">${m.cal} kcal</div>
+          <button onclick="correctMealType('${meals.indexOf(m)}')" style="font-size:10px;color:var(--text-muted);background:none;border:0.5px solid var(--border);border-radius:4px;padding:1px 5px;cursor:pointer;">Edit</button>
+        </div>
+      </div>`;
+    });
+  });
+  log.innerHTML = html;
 }
 
 function updateTips(score, healthyCount, unhealthyCount) {
@@ -1350,35 +1492,313 @@ function switchTab(name, el) {
   el.classList.add('active');
 }
 
+// ── CONVERSATION STATE ────────────────────────────────────────
+let convState = {
+  pending: null,         // meal object waiting for meal-type confirmation
+  lastMeal: null,        // last logged meal (for correction)
+  awaitingMealType: false,
+  awaitingCorrection: false,
+  awaitingIngredients: false,
+};
+
+// ── INTENT DETECTION ──────────────────────────────────────────
+function detectIntent(text) {
+  const t = text.toLowerCase().trim();
+
+  // Greetings
+  if (/^(hi|hello|hey|good morning|good evening|good afternoon|howdy|sup|yo|namaste|hola|hii+|heyy+)/.test(t))
+    return 'greeting';
+
+  // How are you / small talk
+  if (/how are you|how's it going|what's up|wassup/.test(t))
+    return 'smalltalk';
+
+  // Meal type replies
+  if (/^(breakfast|lunch|dinner|snack|brunch)$/.test(t))
+    return 'mealtype';
+
+  // Correction intent
+  if (/^(correct|change|fix|update|edit|wrong|mistake|actually|no wait|it was|that was)/.test(t))
+    return 'correction';
+
+  // Ingredient detail (follow-up describing what something is made of)
+  if (/(made of|made with|contains|has|loaded with|topped with|base|sauce|toppings|ingredients|it has|filled with|stuffed with)/.test(t))
+    return 'ingredients';
+
+  // Thanks
+  if (/^(thanks|thank you|thx|ty|great|awesome|cool|perfect|ok|okay|got it|noted)/.test(t))
+    return 'thanks';
+
+  // Goodbye
+  if (/^(bye|goodbye|see you|cya|later|good night|take care)/.test(t))
+    return 'bye';
+
+  // What did I eat / summary request
+  if (/what did i eat|my log|show me|summary|how many calories|my total|how am i doing/.test(t))
+    return 'summary';
+
+  return 'food';
+}
+
+// ── MEAL TYPE DETECTION FROM TEXT ─────────────────────────────
+function detectMealType(text) {
+  const t = text.toLowerCase();
+  if (/breakfast|morning|woke up|wake up|early morning/.test(t)) return 'breakfast';
+  if (/lunch|afternoon|midday|mid-day/.test(t)) return 'lunch';
+  if (/dinner|evening|night|supper/.test(t)) return 'dinner';
+  if (/snack|munching|munch|in between|mid-morning|tea time/.test(t)) return 'snack';
+  return null;
+}
+
+// ── INGREDIENT ANALYSIS ───────────────────────────────────────
+function analyzeIngredients(text) {
+  const t = text.toLowerCase();
+  let healthPoints = 0;
+  let notes = [];
+
+  const superfoods = ['spinach','kale','quinoa','avocado','broccoli','lentils','beans','chia','flax','hemp','beetroot','turmeric','ginger','garlic'];
+  const veggies = ['vegetable','veggies','veg','tomato','capsicum','onion','carrot','cucumber','zucchini','mushroom','pepper','corn','peas','lettuce'];
+  const unhealthyClues = ['fried','deep fry','maida','refined','processed','sugar','cream','butter heavy','white bread','refined flour'];
+  const healthyClues = ['whole wheat','multigrain','plantain','oats','brown rice','steamed','grilled','baked','raw','fresh'];
+  const proteinClues = ['paneer','cheese','tofu','dal','lentil','beans','chickpea','egg','milk','yogurt','curd','protein'];
+  const fiberClues = ['fiber','fibre','whole grain','oats','bran','psyllium'];
+
+  superfoods.forEach(sf => { if (t.includes(sf)) { healthPoints += 2; notes.push(sf); } });
+  veggies.forEach(v => { if (t.includes(v)) { healthPoints += 1; notes.push('veggies'); } });
+  healthyClues.forEach(h => { if (t.includes(h)) { healthPoints += 1; notes.push(h); } });
+  unhealthyClues.forEach(u => { if (t.includes(u)) { healthPoints -= 2; notes.push(u + ' (⚠️)'); } });
+  proteinClues.forEach(p => { if (t.includes(p)) { healthPoints += 1; } });
+  fiberClues.forEach(f => { if (t.includes(f)) { healthPoints += 2; } });
+
+  const uniqueNotes = [...new Set(notes)];
+  return { healthPoints, notes: uniqueNotes };
+}
+
+// ── QUICK-REPLY BUTTONS ───────────────────────────────────────
+function addQuickReplies(options) {
+  const chat = document.getElementById('chat-messages');
+  const wrap = document.createElement('div');
+  wrap.className = 'quick-replies';
+  wrap.id = 'quick-replies';
+  wrap.innerHTML = options.map(o =>
+    `<button class="qr-btn" onclick="quickReply('${o}')">${o}</button>`
+  ).join('');
+  chat.appendChild(wrap);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function removeQuickReplies() {
+  const el = document.getElementById('quick-replies');
+  if (el) el.remove();
+}
+
+function quickReply(text) {
+  removeQuickReplies();
+  document.getElementById('chat-input').value = text;
+  sendMessage();
+}
+
+// ── LOG A MEAL OBJECT ─────────────────────────────────────────
+function logMeal(meal, mealType) {
+  meal.mealType = mealType || 'snack';
+  meals.push(meal);
+  totals.cal += meal.cal;
+  totals.protein += meal.protein;
+  totals.carbs += meal.carbs;
+  totals.fat += meal.fat;
+  totals.fiber += meal.fiber;
+  convState.lastMeal = meal;
+  convState.pending = null;
+  convState.awaitingMealType = false;
+  updateDashboard();
+}
+
+// ── MAIN SEND MESSAGE ─────────────────────────────────────────
 function sendMessage() {
   const input = document.getElementById('chat-input');
   const text = input.value.trim();
   if (!text) return;
+
+  removeQuickReplies();
   addMsg(text, 'out');
   input.value = '';
   showTyping();
+
   setTimeout(() => {
     hideTyping();
-    const meal = parseMeal(text);
-    if (meal) {
-      meals.push(meal);
-      totals.cal += meal.cal;
-      totals.protein += meal.protein;
-      totals.carbs += meal.carbs;
-      totals.fat += meal.fat;
-      totals.fiber += meal.fiber;
-      const resps = meal.healthy === true ? MEAL_RESPONSES.healthy : meal.healthy === false ? MEAL_RESPONSES.unhealthy : MEAL_RESPONSES.moderate;
-      addMsg(resps[Math.floor(Math.random() * resps.length)], 'in', { cal: meal.cal });
-      updateDashboard();
-    } else {
-      const fallbacks = [
-        "Hmm, I don't recognize that food yet 🤔 Try simpler terms like 'chicken rice' or '2 eggs'.",
-        "I couldn't identify that. Try 'pizza', 'salad', or 'banana smoothie'!",
-        "I'm still learning! Could you rephrase? Try 'oatmeal', 'burger', or 'salmon'."
-      ];
-      addMsg(fallbacks[Math.floor(Math.random() * fallbacks.length)], 'in');
+    const intent = detectIntent(text);
+    const t = text.toLowerCase();
+
+    // ── Greeting ──────────────────────────────────────────────
+    if (intent === 'greeting') {
+      const hour = new Date().getHours();
+      const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+      const name = text.match(/i'?m\s+(\w+)/i);
+      addMsg(`${greet}! ${name ? name[1] + ', ' : ''}I'm MealBuddy 🌱 Tell me what you've eaten today and I'll track it for you!`, 'in');
+      return;
     }
-  }, 800 + Math.random() * 500);
+
+    // ── Small talk ────────────────────────────────────────────
+    if (intent === 'smalltalk') {
+      addMsg("I'm doing great, thanks for asking! 😊 Ready to track your meals. What did you eat today?", 'in');
+      return;
+    }
+
+    // ── Thanks ────────────────────────────────────────────────
+    if (intent === 'thanks') {
+      addMsg("You're welcome! 🌿 Keep logging your meals — consistency is key!", 'in');
+      return;
+    }
+
+    // ── Bye ───────────────────────────────────────────────────
+    if (intent === 'bye') {
+      const s = meals.length > 0
+        ? `Great job logging ${meals.length} meal${meals.length > 1 ? 's' : ''} today! Total: ${totals.cal} kcal. See you tomorrow! 👋`
+        : "Take care! Come back and log your meals tomorrow 👋";
+      addMsg(s, 'in');
+      return;
+    }
+
+    // ── Summary ───────────────────────────────────────────────
+    if (intent === 'summary') {
+      if (meals.length === 0) {
+        addMsg("You haven't logged anything yet today! Tell me what you ate and I'll track it 🍽️", 'in');
+        return;
+      }
+      const byType = {};
+      meals.forEach(m => {
+        const mt = m.mealType || 'snack';
+        if (!byType[mt]) byType[mt] = [];
+        byType[mt].push(m);
+      });
+      let summary = `Here's your day so far 📋
+
+`;
+      ['breakfast','lunch','dinner','snack'].forEach(type => {
+        if (byType[type]) {
+          const items = byType[type].map(m => `${m.emoji} ${m.name} (${m.cal} kcal)`).join(', ');
+          summary += `*${type.charAt(0).toUpperCase()+type.slice(1)}:* ${items}
+`;
+        }
+      });
+      summary += `
+*Total: ${totals.cal} kcal* | P: ${totals.protein}g | C: ${totals.carbs}g | F: ${totals.fat}g`;
+      addMsg(summary, 'in');
+      return;
+    }
+
+    // ── Meal type reply (breakfast/lunch/dinner/snack) ─────────
+    if (intent === 'mealtype' && convState.awaitingMealType && convState.pending) {
+      const mealType = t.trim();
+      const meal = convState.pending;
+      logMeal(meal, mealType);
+      const emoji = { breakfast:'🌅', lunch:'☀️', dinner:'🌙', snack:'🍎', brunch:'🥐' }[mealType] || '🍽️';
+      addMsg(`${emoji} Logged as *${mealType}*! ${meal.emoji} ${meal.name} — ${meal.cal} kcal added to your ${mealType}.`, 'in', { cal: meal.cal });
+      return;
+    }
+
+    // ── Correction intent ─────────────────────────────────────
+    if (intent === 'correction' && convState.lastMeal) {
+      convState.awaitingCorrection = true;
+      addMsg(`Sure! What meal type should I change *${convState.lastMeal.name}* to?`, 'in');
+      addQuickReplies(['Breakfast', 'Lunch', 'Dinner', 'Snack']);
+      return;
+    }
+
+    // ── Handle correction after asking ────────────────────────
+    if (convState.awaitingCorrection && convState.lastMeal && intent === 'mealtype') {
+      convState.lastMeal.mealType = t.trim();
+      convState.awaitingCorrection = false;
+      updateDashboard();
+      addMsg(`✅ Updated! *${convState.lastMeal.name}* is now logged as *${t.trim()}*.`, 'in');
+      return;
+    }
+
+    // ── Ingredient follow-up ──────────────────────────────────
+    if (intent === 'ingredients' && convState.lastMeal) {
+      const analysis = analyzeIngredients(text);
+      const meal = convState.lastMeal;
+
+      if (analysis.healthPoints >= 3) {
+        // Upgrade to healthy
+        const wasHealthy = meal.healthy;
+        meal.healthy = true;
+        // Boost fiber and protein slightly based on clues
+        if (text.match(/veg|vegetable|spinach|kale|broccoli/)) { meal.fiber += 3; totals.fiber += 3; }
+        if (text.match(/cheese|paneer|tofu/)) { meal.protein += 4; totals.protein += 4; }
+        updateDashboard();
+        const ingredients = analysis.notes.slice(0,3).join(', ');
+        addMsg(`Wow, that sounds like a *superfood meal*! 🌟 With ${ingredients} — I'm upgrading ${meal.emoji} ${meal.name} to *Healthy*. Loaded with goodness!`, 'in');
+      } else if (analysis.healthPoints <= -2) {
+        meal.healthy = false;
+        updateDashboard();
+        addMsg(`Thanks for the details! With those ingredients, I've kept ${meal.emoji} ${meal.name} as *Indulgent*. Everything in moderation 😊`, 'in');
+      } else {
+        addMsg(`Thanks for sharing! ${meal.emoji} ${meal.name} sounds like a *balanced meal* 👍 A mix of good and indulgent elements.`, 'in');
+      }
+      return;
+    }
+
+    // ── Food logging ──────────────────────────────────────────
+    const meal = parseMeal(text);
+
+    if (meal) {
+      // Check if meal type is already mentioned in the text
+      const detectedType = detectMealType(text);
+
+      if (detectedType) {
+        // Meal type found in text — log immediately
+        logMeal(meal, detectedType);
+        const emoji = { breakfast:'🌅', lunch:'☀️', dinner:'🌙', snack:'🍎' }[detectedType] || '🍽️';
+        let response = '';
+        if (meal.healthy === true) {
+          response = `${emoji} Logged as *${detectedType}*! Great choice — ${meal.emoji} ${meal.name} is nutritious 💚`;
+        } else {
+          response = `${emoji} Logged as *${detectedType}*! ${meal.emoji} ${meal.name} added. Anything to tell me about how it was made? Sometimes a dish can be healthier than it sounds! 😊`;
+        }
+        addMsg(response, 'in', { cal: meal.cal });
+
+        // If it's an "unhealthy" food, invite ingredient details
+        if (meal.healthy === false) {
+          setTimeout(() => {
+            addMsg("Was it made with any special ingredients — like whole wheat, extra veggies, or a healthier base? Tell me and I'll adjust the health rating! 🌿", 'in');
+            convState.awaitingIngredients = true;
+          }, 800);
+        }
+      } else {
+        // No meal type — ask
+        convState.pending = meal;
+        convState.awaitingMealType = true;
+        addMsg(`Got it — ${meal.emoji} *${meal.name}* (${meal.cal} kcal)! Was this your breakfast, lunch, dinner or a snack? 🍽️`, 'in');
+        addQuickReplies(['Breakfast', 'Lunch', 'Dinner', 'Snack']);
+      }
+    } else {
+      // No food found — check if it's a casual message with food mentioned
+      const casualFood = /pizza|burger|rice|dal|roti|idli|pasta|noodle|curry|sabzi|paratha|dosa|biryani|salad|soup|bread|cake|cookie|chocolate|fruit|veg/.test(t);
+
+      if (casualFood) {
+        addMsg("Sounds yummy! 😋 I couldn't quite identify the exact dish though. Could you describe it a bit more? For example: *'2 slices of pizza'* or *'a bowl of dal rice'*", 'in');
+      } else {
+        const fallbacks = [
+          "Hmm, I didn't catch that as a food 🤔 Try something like *'dal roti'*, *'2 idli'*, or *'banana smoothie'*.",
+          "I'm not sure what that is! Try simpler food names — I know 200+ vegetarian foods 🌱",
+          "Could you rephrase that as a food? Like *'oatmeal'*, *'veg burger'*, or *'masala chai'* 😊"
+        ];
+        addMsg(fallbacks[Math.floor(Math.random() * fallbacks.length)], 'in');
+      }
+    }
+  }, 600 + Math.random() * 400);
+}
+
+function correctMealType(idx) {
+  const meal = meals[parseInt(idx)];
+  if (!meal) return;
+  convState.lastMeal = meal;
+  convState.awaitingCorrection = true;
+  switchTab('meals', document.querySelector('.dash-tab:nth-child(2)'));
+  showChat();
+  addMsg(`Which meal should I move *${meal.name}* to?`, 'in');
+  setTimeout(() => addQuickReplies(['Breakfast', 'Lunch', 'Dinner', 'Snack']), 300);
 }
 
 function resetAll() {
